@@ -1,0 +1,73 @@
+name: Build APK
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Validate and fix App.js syntax
+        run: node validate.js
+
+      - name: Create React Native project
+        run: |
+          npx @react-native-community/cli init notepad --version 0.76.9 --skip-git-init --skip-install
+          cp App.js notepad/App.js
+          cd notepad
+          npm install
+
+      - name: Generate app icon
+        run: |
+          sudo apt-get install -y imagemagick
+          for s in 48 72 96 144 192; do
+            case $s in
+              48) density=mdpi;;
+              72) density=hdpi;;
+              96) density=xhdpi;;
+              144) density=xxhdpi;;
+              192) density=xxxhdpi;;
+            esac
+            dir="notepad/android/app/src/main/res/mipmap-$density"
+            mkdir -p "$dir"
+            convert -size "${s}x${s}" xc:"#0f172a" -fill "#00d4ff" -gravity center -pointsize $(($s/3)) -annotate 0 "ZB" "$dir/ic_launcher.png"
+            cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
+          done
+
+      - name: Build release APK
+        working-directory: notepad/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Build release AAB
+        working-directory: notepad/android
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: notepad/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: notepad/android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
