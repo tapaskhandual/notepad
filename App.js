@@ -5,174 +5,412 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const { width, height } = Dimensions.get('window');
-
 //  THEME 
-const Theme = {
-  background: '#0f172a',
-  surface: '#1e293b',
-  elevated: '#263548',
-  accent: '#00d4ff',
-  text: '#f1f5f9',
-  secondary: '#94a3b8',
-  muted: '#64748b',
-  success: '#22c55e',
-  warning: '#f59e0b',
-  danger: '#ef4444'
+const COLORS = {
+  background: '#0f172a', // slate-900
+  surface: '#1e293b',    // slate-800
+  elevated: '#263548',   // Slightly darker than surface for cards/modals
+  accent: '#00d4ff',     // A vibrant blue
+  text: '#f1f5f9',       // slate-50
+  secondary: '#94a3b8',  // slate-400
+  muted: '#64748b',      // slate-500
+  success: '#22c55e',    // green-500
+  warning: '#f59e0b',    // amber-500
+  danger: '#ef4444',     // red-500
+  info: '#3b82f6',       // blue-500
+  border: '#334155',     // slate-700
 };
 
-const shadowStyle = {
-  elevation: 3,
+const NOTE_COLORS = {
+  'Blue': '#00d4ff',
+  'Green': '#22c55e',
+  'Yellow': '#f59e0b',
+  'Red': '#ef4444',
+  'Purple': '#8b5cf6', // violet-500
+  'Gray': '#94a3b8',
+  'Orange': '#f97316', // orange-500
+};
+
+const TAG_COLORS = {
+  'Work': COLORS.info,
+  'Personal': COLORS.success,
+  'Ideas': COLORS.warning,
+  'Shopping': COLORS.accent,
+  'Important': COLORS.danger,
+  'Reminder': COLORS.purple, // Using a custom color for tags
+  'Random': COLORS.muted
+};
+
+const SHADOW_STYLE = {
+  elevation: 5,
   shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.25,
-  shadowRadius: 3.84
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.3,
+  shadowRadius: 4.65
 };
 
-//  SAMPLE DATA 
-const initialFolders = [
-  { id: 'f1', name: 'Work' },
-  { id: 'f2', name: 'Personal' },
-  { id: 'f3', name: 'Ideas' },
-  { id: 'f4', name: 'Shopping Lists' },
-  { id: 'f5', name: 'Recipes' }
-];
-
-const initialNotes = [
-  { id: 'n1', title: 'Meeting Notes - Project X', content: 'Discussed Q3 strategy, assigned tasks to John and Sarah. Follow-up on budget next week.', folderId: 'f1', tags: ['meeting', 'project-x', 'strategy'], isFavorite: true, audioUri: null, createdAt: new Date('2023-10-26T10:00:00Z').toISOString(), updatedAt: new Date('2023-10-26T10:00:00Z').toISOString() },
-  { id: 'n2', title: 'Grocery List', content: 'Milk, Eggs, Bread, Butter, Apples, Spinach, Chicken Breast, Pasta.', folderId: 'f4', tags: ['grocery', 'food'], isFavorite: false, audioUri: null, createdAt: new Date('2023-10-25T15:30:00Z').toISOString(), updatedAt: new Date('2023-10-25T15:30:00Z').toISOString() },
-  { id: 'n3', title: 'New App Idea: MindFlow', content: 'A journaling app with AI prompts and sentiment analysis. Focus on minimalist UI and offline capabilities.', folderId: 'f3', tags: ['app-idea', 'journaling', 'ai'], isFavorite: true, audioUri: 'audio/mindflow_idea.m4a', createdAt: new Date('2023-10-24T09:00:00Z').toISOString(), updatedAt: new Date('2023-10-24T09:00:00Z').toISOString() },
-  { id: 'n4', title: 'Weekend Plans', content: 'Saturday: Hiking at local park. Sunday: Brunch with friends, then movie night.', folderId: 'f2', tags: ['weekend', 'social'], isFavorite: false, audioUri: null, createdAt: new Date('2023-10-23T18:00:00Z').toISOString(), updatedAt: new Date('2023-10-23T18:00:00Z').toISOString() },
-  { id: 'n5', title: 'Recipe: Spicy Tuna Pasta', content: 'Ingredients: Pasta, canned tuna, chili flakes, garlic, olive oil, cherry tomatoes, parsley.', folderId: 'f5', tags: ['recipe', 'dinner', 'tuna'], isFavorite: false, audioUri: null, createdAt: new Date('2023-10-22T12:00:00Z').toISOString(), updatedAt: new Date('2023-10-22T12:00:00Z').toISOString() },
-  { id: 'n6', title: 'Client Feedback - Website Redesign', content: 'Client loves the new layout but wants to adjust the color scheme on the contact page. Provide options for softer blues.', folderId: 'f1', tags: ['client', 'website', 'feedback'], isFavorite: true, audioUri: null, createdAt: new Date('2023-10-21T11:00:00Z').toISOString(), updatedAt: new Date('2023-10-21T11:00:00Z').toISOString() },
-  { id: 'n7', title: 'Book List', content: '1. The Midnight Library 2. Project Hail Mary 3. Sapiens', folderId: 'f2', tags: ['books', 'reading'], isFavorite: false, audioUri: null, createdAt: new Date('2023-10-20T14:00:00Z').toISOString(), updatedAt: new Date('2023-10-20T14:00:00Z').toISOString() },
-  { id: 'n8', title: 'Gym Routine', content: 'Monday: Chest & Triceps. Wednesday: Back & Biceps. Friday: Legs & Shoulders. Cardio on Tuesday/Thursday.', folderId: 'f2', tags: ['fitness', 'gym'], isFavorite: false, audioUri: null, createdAt: new Date('2023-10-19T07:00:00Z').toISOString(), updatedAt: new Date('2023-10-19T07:00:00Z').toISOString() },
-  { id: 'n9', title: 'Blog Post Draft: Future of AI', content: 'Outline: Intro to AI, current applications, ethical considerations, future predictions. Focus on accessibility.', folderId: 'f3', tags: ['blog', 'ai', 'writing'], isFavorite: false, audioUri: null, createdAt: new Date('2023-10-18T16:00:00Z').toISOString(), updatedAt: new Date('2023-10-18T16:00:00Z').toISOString() },
-  { id: 'n10', title: 'Car Maintenance Reminder', content: 'Oil change due in 1,000 miles. Check tire pressure before long trip next month.', folderId: 'f2', tags: ['car', 'maintenance'], isFavorite: false, audioUri: null, createdAt: new Date('2023-10-17T09:00:00Z').toISOString(), updatedAt: new Date('2023-10-17T09:00:00Z').toISOString() },
-  { id: 'n11', title: 'Ideas for Birthday Gift', content: 'For Sarah: new headphones, a personalized mug, or a gift card to her favorite bookstore.', folderId: 'f2', tags: ['gift', 'birthday'], isFavorite: false, audioUri: 'audio/birthday_gift_ideas.m4a', createdAt: new Date('2023-10-16T13:00:00Z').toISOString(), updatedAt: new Date('2023-10-16T13:00:00Z').toISOString() },
-  { id: 'n12', title: 'Project Alpha - Next Steps', content: 'Finalize design mocks, begin frontend development, set up API endpoints. Schedule daily stand-ups.', folderId: 'f1', tags: ['project', 'development'], isFavorite: true, audioUri: null, createdAt: new Date('2023-10-15T10:00:00Z').toISOString(), updatedAt: new Date('2023-10-15T10:00:00Z').toISOString() },
-  { id: 'n13', title: 'Vacation Planning - Japan', content: 'Research flights, accommodation in Tokyo and Kyoto, JR Pass options. Must visit cherry blossoms if possible!', folderId: 'f2', tags: ['travel', 'japan', 'vacation'], isFavorite: false, audioUri: null, createdAt: new Date('2023-10-14T11:00:00Z').toISOString(), updatedAt: new Date('2023-10-14T11:00:00Z').toISOString() },
-  { id: 'n14', title: 'Workout Music Playlist', content: 'Add more upbeat electronic tracks. Explore new artists like Odesza and Lane 8.', folderId: 'f2', tags: ['music', 'workout'], isFavorite: false, audioUri: null, createdAt: new Date('2023-10-13T17:00:00Z').toISOString(), updatedAt: new Date('2023-10-13T17:00:00Z').toISOString() },
-  { id: 'n15', title: 'Home Improvement Ideas', content: 'Paint living room, add shelving to bathroom, fix leaky faucet in kitchen.', folderId: 'f2', tags: ['home', 'diy'], isFavorite: false, audioUri: null, createdAt: new Date('2023-10-12T08:00:00Z').toISOString(), updatedAt: new Date('2023-10-12T08:00:00Z').toISOString() },
-  { id: 'n16', title: 'Brainstorming - Marketing Campaign', content: 'Keywords: innovative, user-friendly, efficient. Target audience: small businesses and startups.', folderId: 'f1', tags: ['marketing', 'brainstorm'], isFavorite: false, audioUri: 'audio/marketing_campaign.m4a', createdAt: new Date('2023-10-11T14:00:00Z').toISOString(), updatedAt: new Date('2023-10-11T14:00:00Z').toISOString() }
-];
+const { width } = Dimensions.get('window');
 
 //  UTILITY FUNCTIONS 
 const generateId = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  if (isNaN(date.getTime())) return 'Invalid Date';
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+  return date.toLocaleDateString(undefined, options);
 };
 
 const getTimeAgo = (dateString) => {
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return 'Invalid Date';
   const now = new Date();
-  const seconds = Math.floor((now - date) / 1000);
+  const date = new Date(dateString);
+  const seconds = Math.round((now.getTime() - date.getTime()) / 1000);
+  const minutes = Math.round(seconds / 60);
+  const hours = Math.round(minutes / 60);
+  const days = Math.round(hours / 24);
+  const weeks = Math.round(days / 7);
+  const months = Math.round(days / 30);
+  const years = Math.round(days / 365);
 
-  let interval = seconds / 31536000;
-  if (interval > 1) return Math.floor(interval) + " years ago";
-  interval = seconds / 2592000;
-  if (interval > 1) return Math.floor(interval) + " months ago";
-  interval = seconds / 86400;
-  if (interval > 1) return Math.floor(interval) + " days ago";
-  interval = seconds / 3600;
-  if (interval > 1) return Math.floor(interval) + " hours ago";
-  interval = seconds / 60;
-  if (interval > 1) return Math.floor(interval) + " minutes ago";
-  return Math.floor(seconds) + " seconds ago";
+  if (seconds < 60) return `${seconds}s ago`;
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  if (weeks < 4) return `${weeks}w ago`;
+  if (months < 12) return `${months}mo ago`;
+  return `${years}y ago`;
 };
 
-const shareNote = async (note) => {
-  const shareText = `Note: ${note.title}\n\n${note.content}\n\nFolder: ${note.folderName}\nTags: ${note.tags.join(', ')}`;
+const getNoteColorHex = (colorName) => NOTE_COLORS[colorName] || COLORS.muted;
+const getTagColorHex = (tagName) => TAG_COLORS[tagName] || COLORS.muted;
+
+// AsyncStorage Helpers
+const NOTES_STORAGE_KEY = '@notepad_notes';
+const SETTINGS_STORAGE_KEY = '@notepad_settings';
+
+const loadNotes = async () => {
   try {
-    const supported = await Linking.canOpenURL('mailto:'); // Check if email is available
-    if (supported) {
-      await Linking.openURL(`mailto:?subject=${encodeURIComponent(note.title)}&body=${encodeURIComponent(shareText)}`);
-    } else {
-      Alert.alert('Sharing not available', 'Please ensure you have an email app configured.');
-    }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  } catch (error) {
-    Alert.alert('Sharing Failed', 'Could not open sharing options.');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    const jsonValue = await AsyncStorage.getItem(NOTES_STORAGE_KEY);
+    return jsonValue != null ? JSON.parse(jsonValue) : [];
+  } catch (e) {
+    console.error('Failed to load notes.', e);
+    return [];
   }
 };
 
+const saveNotes = async (notes) => {
+  try {
+    const jsonValue = JSON.stringify(notes);
+    await AsyncStorage.setItem(NOTES_STORAGE_KEY, jsonValue);
+  } catch (e) {
+    console.error('Failed to save notes.', e);
+  }
+};
+
+const loadSettings = async () => {
+  try {
+    const jsonValue = await AsyncStorage.getItem(SETTINGS_STORAGE_KEY);
+    return jsonValue != null ? JSON.parse(jsonValue) : { cloudSync: false, hapticFeedback: true };
+  } catch (e) {
+    console.error('Failed to load settings.', e);
+    return { cloudSync: false, hapticFeedback: true };
+  }
+};
+
+const saveSettings = async (settings) => {
+  try {
+    const jsonValue = JSON.stringify(settings);
+    await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, jsonValue);
+  } catch (e) {
+    console.error('Failed to save settings.', e);
+  }
+};
+
+//  SAMPLE DATA 
+const initialNotes = [
+  {
+    id: generateId(),
+    title: 'Grocery List',
+    content: 'Milk, Eggs, Bread, Butter, Apples, Bananas, Spinach, Chicken Breast. Don\'t forget the organic options!',
+    tags: ['Personal', 'Shopping'],
+    color: 'Green',
+    createdAt: new Date(Date.now() - 86400000 * 3).toISOString(), // 3 ago
+    modifiedAt: new Date(Date.now() - 86400000 * 1).toISOString(), // 1 ago
+    isFavorite: true
+  },
+  {
+    id: generateId(),
+    title: 'Meeting Notes - Project Alpha',
+    content: 'Discussed Q3 deliverables. Action items: John to finalize design, Sarah to review budget, Mark to prepare presentation for next week. Follow up on client feedback.',
+    tags: ['Work', 'Important'],
+    color: 'Blue',
+    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 ago
+    modifiedAt: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 ago
+    isFavorite: false
+  },
+  {
+    id: generateId(),
+    title: 'New App Idea: MindFlow',
+    content: 'A journaling app with AI prompts and sentiment analysis. Focus on minimalist UI and offline support. Integrate with calendar for daily reminders. Monetization through premium features.',
+    tags: ['Ideas', 'Work'],
+    color: 'Yellow',
+    createdAt: new Date(Date.now() - 86400000 * 7).toISOString(), // 7 ago
+    modifiedAt: new Date(Date.now() - 86400000 * 0.5).toISOString(), // 12 ago
+    isFavorite: true
+  },
+  {
+    id: generateId(),
+    title: 'Weekend Plans',
+    content: 'Saturday: Hiking at local park, picnic lunch. Sunday: Movie marathon, try new recipe for dinner (pasta primavera). Call Aunt Mary.',
+    tags: ['Personal'],
+    color: 'Purple',
+    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 ago
+    modifiedAt: new Date().toISOString(), // Just now
+    isFavorite: false
+  },
+  {
+    id: generateId(),
+    title: 'Book Recommendations',
+    content: '1. "Dune" by Frank Herbert (Sci-Fi classic). 2. "Atomic Habits" by James Clear (Self-help). 3. "The Midnight Library" by Matt Haig (Contemporary fiction).',
+    tags: ['Personal', 'Ideas'],
+    color: 'Gray',
+    createdAt: new Date(Date.now() - 86400000 * 10).toISOString(),
+    modifiedAt: new Date(Date.now() - 86400000 * 4).toISOString(),
+    isFavorite: false
+  },
+  {
+    id: generateId(),
+    title: 'Client Follow-up: Acme Corp',
+    content: 'Send updated proposal by EOD. Schedule a call for next Tuesday to discuss feedback. Emphasize cost-saving benefits.',
+    tags: ['Work', 'Important'],
+    color: 'Red',
+    createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
+    modifiedAt: new Date(Date.now() - 86400000 * 0.1).toISOString(), // Few hours ago
+    isFavorite: true
+  },
+  {
+    id: generateId(),
+    title: 'Recipe: Spicy Chicken Stir-fry',
+    content: 'Ingredients: Chicken, bell peppers, onions, broccoli, soy sauce, ginger, garlic, chili flakes. Instructions: Marinate chicken, stir-fry veggies, combine with sauce.',
+    tags: ['Personal'],
+    color: 'Orange',
+    createdAt: new Date(Date.now() - 86400000 * 6).toISOString(),
+    modifiedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+    isFavorite: false
+  },
+  {
+    id: generateId(),
+    title: 'Workout Routine',
+    content: 'Monday: Chest & Triceps. Tuesday: Back & Biceps. Wednesday: Legs & Shoulders. Thursday: Cardio. Friday: Full Body. Weekend: Rest/Active Recovery.',
+    tags: ['Personal', 'Reminder'],
+    color: 'Green',
+    createdAt: new Date(Date.now() - 86400000 * 14).toISOString(),
+    modifiedAt: new Date(Date.now() - 86400000 * 8).toISOString(),
+    isFavorite: false
+  },
+  {
+    id: generateId(),
+    title: 'Conference Ideas 2024',
+    content: 'Look into "Future of AI" summit. "DevConnect" for mobile development trends. Check speaker lists and early bird registration deadlines.',
+    tags: ['Work', 'Ideas'],
+    color: 'Blue',
+    createdAt: new Date(Date.now() - 86400000 * 20).toISOString(),
+    modifiedAt: new Date(Date.now() - 86400000 * 12).toISOString(),
+    isFavorite: false
+  },
+  {
+    id: generateId(),
+    title: 'Home Maintenance Checklist',
+    content: 'Clean gutters, check smoke detectors, replace air filters, inspect roof for damage, test water heater pressure release valve. Schedule HVAC service.',
+    tags: ['Personal', 'Reminder'],
+    color: 'Yellow',
+    createdAt: new Date(Date.now() - 86400000 * 18).toISOString(),
+    modifiedAt: new Date(Date.now() - 86400000 * 9).toISOString(),
+    isFavorite: true
+  },
+  {
+    id: generateId(),
+    title: 'Travel Itinerary: Japan',
+    content: 'Tokyo (3), Kyoto (4), Osaka (2). Must-sees: Shibuya Crossing, Fushimi Inari, Dotonbori. Research best ramen spots.',
+    tags: ['Personal'],
+    color: 'Purple',
+    createdAt: new Date(Date.now() - 86400000 * 25).toISOString(),
+    modifiedAt: new Date(Date.now() - 86400000 * 15).toISOString(),
+    isFavorite: false
+  },
+  {
+    id: generateId(),
+    title: 'Project Phoenix Brainstorm',
+    content: 'Key features: secure data encryption, real-time collaboration, API integration for third-party tools. Target audience: small businesses.',
+    tags: ['Work', 'Ideas'],
+    color: 'Red',
+    createdAt: new Date(Date.now() - 86400000 * 12).toISOString(),
+    modifiedAt: new Date(Date.now() - 86400000 * 6).toISOString(),
+    isFavorite: false
+  },
+  {
+    id: generateId(),
+    title: 'Gift Ideas for Mom',
+    content: 'Spa day voucher, custom photo album, new plant for her garden, subscription box for tea. Ask Dad for more ideas.',
+    tags: ['Personal', 'Shopping'],
+    color: 'Orange',
+    createdAt: new Date(Date.now() - 86400000 * 9).toISOString(),
+    modifiedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+    isFavorite: true
+  },
+  {
+    id: generateId(),
+    title: 'Learn React Native - Modules',
+    content: 'Review Hooks (useState, useEffect, useContext). Practice navigation with React Navigation (or custom state-based). Explore Expo APIs (Location, Haptics).',
+    tags: ['Work', 'Ideas'],
+    color: 'Blue',
+    createdAt: new Date(Date.now() - 86400000 * 30).toISOString(),
+    modifiedAt: new Date(Date.now() - 86400000 * 10).toISOString(),
+    isFavorite: false
+  },
+  {
+    id: generateId(),
+    title: 'Dental Appointment Reminder',
+    content: 'Appointment with Dr. Smith on October 26th at 10 AM. Confirm insurance details beforehand. Get directions.',
+    tags: ['Personal', 'Reminder', 'Important'],
+    color: 'Green',
+    createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
+    modifiedAt: new Date(Date.now() - 86400000 * 0.2).toISOString(), // Few hours ago
+    isFavorite: false
+  }
+];
+
 //  REUSABLE COMPONENTS 
 
-const Header = ({ title, onBack, rightButton, rightButtonText, rightButtonIcon, onRightButtonPress, showAddButton, onAddPress }) => (
-  <LinearGradient
-    colors={['#1e293b', '#0f172a']}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 0 }}
-    style={styles.headerContainer}
-  >
-    <View style={styles.headerLeft}>
+const Header = ({ title, onBack, rightActionIcon, onRightAction, rightActionText }) => {
+  return (
+    <View style={styles.header}>
       {onBack && (
         <TouchableOpacity onPress={onBack} style={styles.headerButton}>
-          <Text style={styles.headerButtonIcon}>{'< '}</Text>
+          <Text style={styles.headerButtonText}>{'<'}</Text>
         </TouchableOpacity>
       )}
+      <Text style={styles.headerTitle}>{title}</Text>
+      {onRightAction && (
+        <TouchableOpacity onPress={onRightAction} style={styles.headerButton}>
+          {rightActionIcon && <Text style={styles.headerButtonText}>{rightActionIcon}</Text>}
+          {rightActionText && <Text style={styles.headerButtonText}>{rightActionText}</Text>}
+        </TouchableOpacity>
+      )}
+      {!onBack && !onRightAction && <View style={styles.headerButtonPlaceholder} />}
+      {onBack && !onRightAction && <View style={styles.headerButtonPlaceholder} />}
+      {!onBack && onRightAction && <View style={styles.headerButtonPlaceholder} />}
     </View>
-    <Text style={styles.headerTitle}>{title}</Text>
-    <View style={styles.headerRight}>
-      {showAddButton && (
-        <TouchableOpacity onPress={onAddPress} style={styles.headerButton}>
-          <Text style={styles.headerButtonIcon}>{' \u2795'}</Text>
-        </TouchableOpacity>
-      )}
-      {rightButton && (
-        <TouchableOpacity onPress={onRightButtonPress} style={styles.headerButton}>
-          <Text style={styles.headerButtonText}>{rightButtonText}</Text>
-          {rightButtonIcon && <Text style={styles.headerButtonIcon}>{rightButtonIcon}</Text>}
-        </TouchableOpacity>
-      )}
-    </View>
-  </LinearGradient>
-);
+  );
+};
 
-const CustomButton = ({ title, onPress, style, textStyle, icon, disabled = false }) => (
-  <TouchableOpacity
-    onPress={() => {
-      if (!disabled) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        onPress();
-      }
-    }}
-    style={[styles.customButton, style, disabled && styles.customButtonDisabled]}
-    disabled={disabled}
-  >
-    {icon && <Text style={styles.customButtonIcon}>{icon}</Text>}
-    <Text style={[styles.customButtonText, textStyle]}>{title}</Text>
-  </TouchableOpacity>
-);
+const Button = ({ title, onPress, style, textStyle, primary, danger, disabled }) => {
+  const buttonBackgroundColor = disabled
+    ? COLORS.muted
+    : danger
+      ? COLORS.danger
+      : primary
+        ? COLORS.accent
+        : COLORS.surface;
 
-const SearchBar = ({ searchTerm, onSearchChange, placeholder = 'Search...' }) => (
-  <View style={styles.searchBarContainer}>
-    <Text style={styles.searchIcon}>{' \u{1F50D}'}</Text>
-    <TextInput
-      style={styles.searchTextInput}
-      placeholder={placeholder}
-      placeholderTextColor={Theme.secondary}
-      value={searchTerm}
-      onChangeText={onSearchChange}
-      selectionColor={Theme.accent}
-    />
+  const buttonTextColor = disabled
+    ? COLORS.secondary
+    : primary || danger
+      ? COLORS.text
+      : COLORS.accent;
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[
+        styles.button,
+        { backgroundColor: buttonBackgroundColor },
+        style,
+        disabled && styles.buttonDisabled
+      ]}
+      activeOpacity={0.7}
+      disabled={disabled}
+    >
+      <Text style={[styles.buttonText, { color: buttonTextColor }, textStyle]}>
+        {title}
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
+const NoteCard = ({ note, onPress, onToggleFavorite }) => {
+  const noteColor = getNoteColorHex(note.color);
+  const snippet = note.content.length > 100 ? note.content.substring(0, 97) + '...' : note.content;
+
+  return (
+    <TouchableOpacity onPress={() => onPress(note.id)} style={styles.noteCard} activeOpacity={0.8}>
+      <View style={[styles.noteCardColorBar, { backgroundColor: noteColor }]} />
+      <View style={styles.noteCardContent}>
+        <View style={styles.noteCardHeader}>
+          <Text style={styles.noteCardTitle} numberOfLines={1}>{note.title}</Text>
+          <TouchableOpacity onPress={() => onToggleFavorite(note.id)} style={styles.favoriteButton}>
+            <Text style={styles.favoriteIcon}>{note.isFavorite ? '\u2764' : '\u2661'}</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.noteCardSnippet} numberOfLines={2}>{snippet}</Text>
+        <View style={styles.noteCardFooter}>
+          <View style={styles.noteCardTags}>
+            {note.tags.map((tag, index) => (
+              <TagBadge key={index} tag={tag} />
+            ))}
+          </View>
+          <Text style={styles.noteCardDate}>{getTimeAgo(note.modifiedAt)}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+const TagBadge = ({ tag }) => (
+  <View style={[styles.tagBadge, { backgroundColor: getTagColorHex(tag) }]}>
+    <Text style={styles.tagBadgeText}>{tag}</Text>
   </View>
 );
 
-const FilterChip = ({ label, isSelected, onPress }) => (
+const SearchBar = ({ searchText, onSearchChange, onClearSearch }) => {
+  return (
+    <View style={styles.searchBarContainer}>
+      <TextInput
+        style={styles.searchBarInput}
+        placeholder="Search notes..."
+        placeholderTextColor={COLORS.secondary}
+        value={searchText}
+        onChangeText={onSearchChange}
+      />
+      {searchText.length > 0 && (
+        <TouchableOpacity onPress={onClearSearch} style={styles.clearSearchButton}>
+          <Text style={styles.clearSearchText}>\u274C</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
+
+const FilterChip = ({ label, selected, onPress }) => (
   <TouchableOpacity
-    onPress={() => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onPress();
-    }}
-    style={[styles.filterChip, isSelected && styles.filterChipSelected]}
+    style={[styles.filterChip, selected && styles.filterChipSelected]}
+    onPress={onPress}
+    activeOpacity={0.7}
   >
-    <Text style={[styles.filterChipText, isSelected && styles.filterChipTextSelected]}>{label}</Text>
+    <Text style={[styles.filterChipText, selected && styles.filterChipTextSelected]}>
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
+
+const SortOption = ({ label, selected, onPress }) => (
+  <TouchableOpacity
+    style={[styles.sortOption, selected && styles.sortOptionSelected]}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <Text style={[styles.sortOptionText, selected && styles.sortOptionTextSelected]}>
+      {label}
+    </Text>
   </TouchableOpacity>
 );
 
@@ -181,19 +419,14 @@ const EmptyState = ({ icon, message, ctaText, onCtaPress }) => (
     <Text style={styles.emptyStateIcon}>{icon}</Text>
     <Text style={styles.emptyStateMessage}>{message}</Text>
     {onCtaPress && (
-      <CustomButton
-        title={ctaText}
-        onPress={onCtaPress}
-        style={styles.emptyStateCtaButton}
-        textStyle={{ color: Theme.background }}
-      />
+      <Button title={ctaText} onPress={onCtaPress} primary style={styles.emptyStateCtaButton} />
     )}
   </View>
 );
 
 const Toast = ({ message, type, isVisible, onDismiss }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current; // Start 50 below
 
   useEffect(() => {
     if (isVisible) {
@@ -221,248 +454,229 @@ const Toast = ({ message, type, isVisible, onDismiss }) => {
               duration: 300,
               useNativeDriver: true
             })
-          ]).start(() => onDismiss());
-        }, 3000);
+          ]).start(onDismiss);
+        }, 2000); // Display for 2
       });
     }
   }, [isVisible, fadeAnim, slideAnim, onDismiss]);
 
   if (!isVisible) return null;
 
-  const backgroundColor =
-    type === 'success' ? Theme.success :
-    type === 'danger' ? Theme.danger :
-    Theme.secondary;
+  const backgroundColor = type === 'success' ? COLORS.success :
+    type === 'danger' ? COLORS.danger :
+      type === 'warning' ? COLORS.warning :
+        COLORS.info;
 
   return (
     <Animated.View
       style={[
         styles.toastContainer,
-        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-        { backgroundColor }
+        { backgroundColor, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
       ]}
     >
-      <Text style={styles.toastMessage}>{message}</Text>
+      <Text style={styles.toastText}>{message}</Text>
     </Animated.View>
   );
 };
 
-const NoteCard = ({ note, folderName, onPress, onToggleFavorite }) => (
-  <TouchableOpacity
-    style={styles.noteCard}
-    onPress={() => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onPress(note.id);
-    }}
-  >
-    <View style={styles.noteCardHeader}>
-      <Text style={styles.noteCardTitle} numberOfLines={1}>{note.title}</Text>
+const ColorPicker = ({ selectedColor, onSelectColor }) => (
+  <View style={styles.colorPickerContainer}>
+    {Object.keys(NOTE_COLORS).map((colorName) => (
       <TouchableOpacity
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          onToggleFavorite(note.id);
-        }}
-        style={styles.favoriteButton}
-      >
-        <Text style={styles.favoriteIcon}>{note.isFavorite ? '\u2764' : '\u2661'}</Text>
-      </TouchableOpacity>
-    </View>
-    <Text style={styles.noteCardContent} numberOfLines={2}>{note.content}</Text>
-    <View style={styles.noteCardFooter}>
-      {folderName && <Text style={styles.noteCardFolder}>{' \u{1F4CD}'} {folderName}</Text>}
-      <Text style={styles.noteCardDate}>{getTimeAgo(note.updatedAt)}</Text>
-    </View>
-    {note.tags && note.tags.length > 0 && (
-      <View style={styles.noteCardTags}>
-        {note.tags.map((tag, index) => (
-          <Text key={index} style={styles.noteCardTag}>#{tag}</Text>
-        ))}
-      </View>
-    )}
-  </TouchableOpacity>
+        key={colorName}
+        style={[
+          styles.colorOption,
+          { backgroundColor: NOTE_COLORS[colorName] },
+          selectedColor === colorName && styles.colorOptionSelected
+        ]}
+        onPress={() => onSelectColor(colorName)}
+      />
+    ))}
+  </View>
 );
 
-const FolderCard = ({ folder, noteCount, onPress, onEdit, onDelete }) => (
-  <Pressable
-    onPress={() => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onPress(folder.id);
-    }}
-    onLongPress={() => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      Alert.alert(
-        'Folder Actions',
-        `What do you want to do with "${folder.name}"?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Edit', onPress: () => onEdit(folder) },
-          { text: 'Delete', onPress: () => onDelete(folder.id), style: 'destructive' }
-        ]
-      );
-    }}
-    style={styles.folderCard}
-  >
-    <Text style={styles.folderIcon}>{' \u{1F4C1}'}</Text>
-    <View style={styles.folderInfo}>
-      <Text style={styles.folderName}>{folder.name}</Text>
-      <Text style={styles.folderNoteCount}>{noteCount} notes</Text>
-    </View>
-  </Pressable>
-);
+const AnimatedScreen = ({ children, isVisible }) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(width)).current; // Start from right
 
-const AudioPlayer = ({ audioUri }) => {
-  if (!audioUri) return null;
-
-  // Simulate audio playback
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const duration = 15000; // Simulate 15 audio
-  const intervalRef = useRef(null);
-
-  const togglePlay = () => {
-    if (isPlaying) {
-      clearInterval(intervalRef.current);
-      setIsPlaying(false);
+  useEffect(() => {
+    if (isVisible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true
+        })
+      ]).start();
     } else {
-      setIsPlaying(true);
-      setProgress(0);
-      intervalRef.current = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(intervalRef.current);
-            setIsPlaying(false);
-            return 0;
-          }
-          return prev + (100 / (duration / 100)); // Increment by 1% every 100ms
-        });
-      }, 100);
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true
+        }),
+        Animated.timing(slideAnim, {
+          toValue: width,
+          duration: 300,
+          useNativeDriver: true
+        })
+      ]).start();
     }
-  };
-
-  const formatTime = (ms) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
+  }, [isVisible, fadeAnim, slideAnim]);
 
   return (
-    <View style={styles.audioPlayerContainer}>
-      <TouchableOpacity onPress={togglePlay} style={styles.audioPlayButton}>
-        <Text style={styles.audioPlayIcon}>{isPlaying ? '\u23F8' : '\u25B6'}</Text>
-      </TouchableOpacity>
-      <View style={styles.audioProgressBarBackground}>
-        <View style={[styles.audioProgressBarFill, { width: `${progress}%` }]} />
-      </View>
-      <Text style={styles.audioTime}>{formatTime(isPlaying ? (progress / 100) * duration : duration)}</Text>
-    </View>
+    <Animated.View
+      style={[
+        StyleSheet.absoluteFillObject,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateX: slideAnim }],
+          zIndex: isVisible ? 1 : 0, // Ensure visible screen is on top
+          backgroundColor: COLORS.background, // Match app background
+        }
+      ]}
+    >
+      {children}
+    </Animated.View>
   );
 };
 
 //  SCREEN COMPONENTS 
 
-const HomeScreen = ({ navigateToNotes, navigateToFolders, showToast, notes, folders }) => {
-  const recentNotes = useMemo(() =>
-    notes.slice().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)).slice(0, 5),
-    [notes]
-  );
-  const favoriteNotes = useMemo(() =>
-    notes.filter(note => note.isFavorite).slice(0, 5),
-    [notes]
-  );
-
+const HomeScreen = ({ notes, navigateTo, showToast }) => {
   const totalNotes = notes.length;
-  const totalFolders = folders.length;
+  const favoriteNotes = notes.filter(n => n.isFavorite).length;
+  const recentNotes = useMemo(() => {
+    return [...notes]
+      .sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime())
+      .slice(0, 5);
+  }, [notes]);
 
-  const getFolderName = useCallback((folderId) => {
-    const folder = folders.find(f => f.id === folderId);
-    return folder ? folder.name : 'Uncategorized';
-  }, [folders]);
+  const notesByColor = useMemo(() => {
+    const counts = {};
+    Object.keys(NOTE_COLORS).forEach(color => counts[color] = 0);
+    notes.forEach(note => {
+      if (note.color && counts[note.color] !== undefined) {
+        counts[note.color]++;
+      }
+    });
+    return Object.entries(counts).filter(([, count]) => count > 0);
+  }, [notes]);
+
+  const notesByTag = useMemo(() => {
+    const counts = {};
+    Object.keys(TAG_COLORS).forEach(tag => counts[tag] = 0);
+    notes.forEach(note => {
+      note.tags.forEach(tag => {
+        if (tag && counts[tag] !== undefined) {
+          counts[tag]++;
+        }
+      });
+    });
+    return Object.entries(counts).filter(([, count]) => count > 0);
+  }, [notes]);
 
   return (
-    <View style={styles.screenContainer}>
+    <SafeAreaView style={styles.screenContainer}>
       <Header title="Notepad Dashboard" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.homeScrollContainer}>
+        <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{totalNotes}</Text>
             <Text style={styles.statLabel}>Total Notes</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{totalFolders}</Text>
-            <Text style={styles.statLabel}>Total Folders</Text>
+            <Text style={styles.statNumber}>{favoriteNotes}</Text>
+            <Text style={styles.statLabel}>Favorites \u2764</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Recent Notes</Text>
-        {recentNotes.length === 0 ? (
-          <EmptyState
-            icon="\u{1F4DD}"
-            message="No recent notes yet!"
-            ctaText="Create your first note"
-            onCtaPress={() => navigateToNotes('add')}
-          />
-        ) : (
-          <FlatList
-            data={recentNotes}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <NoteCard
-                note={item}
-                folderName={getFolderName(item.folderId)}
-                onPress={() => navigateToNotes('detail', item.id)}
-                onToggleFavorite={() => { /* Handled in main App.js */ }}
-                style={styles.horizontalNoteCard}
-              />
-            )}
-            contentContainerStyle={styles.horizontalListContainer}
-          />
+        {recentNotes.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Recently Modified</Text>
+            <FlatList
+              data={recentNotes}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalListContainer}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.recentNoteCard}
+                  onPress={() => navigateTo('NoteDetail', { noteId: item.id })}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.recentNoteColorBar, { backgroundColor: getNoteColorHex(item.color) }]} />
+                  <Text style={styles.recentNoteTitle} numberOfLines={1}>{item.title}</Text>
+                  <Text style={styles.recentNoteSnippet} numberOfLines={2}>{item.content}</Text>
+                  <Text style={styles.recentNoteDate}>{getTimeAgo(item.modifiedAt)}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </>
         )}
 
-        <Text style={styles.sectionTitle}>Favorite Notes</Text>
-        {favoriteNotes.length === 0 ? (
+        {notesByColor.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Notes by Color</Text>
+            <View style={styles.chartContainer}>
+              {notesByColor.map(([colorName, count]) => (
+                <View key={colorName} style={styles.chartBarWrapper}>
+                  <View
+                    style={[
+                      styles.chartBar,
+                      {
+                        backgroundColor: NOTE_COLORS[colorName],
+                        width: `${(count / totalNotes) * 100}%`
+                      }
+                    ]}
+                  />
+                  <Text style={styles.chartLabel}>{colorName} ({count})</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        {notesByTag.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Notes by Tag</Text>
+            <View style={styles.tagCloudContainer}>
+              {notesByTag.map(([tagName, count]) => (
+                <View key={tagName} style={[styles.tagCloudItem, { backgroundColor: getTagColorHex(tagName) }]}>
+                  <Text style={styles.tagCloudText}>{tagName} ({count})</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        {totalNotes === 0 && (
           <EmptyState
-            icon="\u2764"
-            message="No favorites yet!"
-            ctaText="Star some notes"
-            onCtaPress={() => navigateToNotes('list')}
-          />
-        ) : (
-          <FlatList
-            data={favoriteNotes}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <NoteCard
-                note={item}
-                folderName={getFolderName(item.folderId)}
-                onPress={() => navigateToNotes('detail', item.id)}
-                onToggleFavorite={() => { /* Handled in main App.js */ }}
-                style={styles.horizontalNoteCard}
-              />
-            )}
-            contentContainerStyle={styles.horizontalListContainer}
+            icon="\u{1F4DD}"
+            message="You don't have any notes yet. Let's create one!"
+            ctaText="Create First Note"
+            onCtaPress={() => navigateTo('NoteForm')}
           />
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
-const NotesListScreen = ({ notes, folders, navigateToNotes, onToggleFavorite, showToast, refreshNotes, isRefreshing }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFolderFilter, setSelectedFolderFilter] = useState('all');
-  const [selectedTagFilter, setSelectedTagFilter] = useState('all');
-  const [sortOption, setSortOption] = useState('updatedAt_desc'); // createdAt_asc, title_asc etc.
-  const [showSortModal, setShowSortModal] = useState(false);
-
-  const getFolderName = useCallback((folderId) => {
-    const folder = folders.find(f => f.id === folderId);
-    return folder ? folder.name : 'Uncategorized';
-  }, [folders]);
+const NotesListScreen = ({ notes, navigateTo, onToggleFavorite, showToast, refreshNotes }) => {
+  const [searchText, setSearchText] = useState('');
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [selectedColors, setSelectedColors] = useState([]);
+  const [sortBy, setSortBy] = useState('modifiedAt'); // 'modifiedAt', 'createdAt', 'title'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc', 'desc'
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const allTags = useMemo(() => {
     const tags = new Set();
@@ -470,144 +684,127 @@ const NotesListScreen = ({ notes, folders, navigateToNotes, onToggleFavorite, sh
     return Array.from(tags).sort();
   }, [notes]);
 
+  const allColors = useMemo(() => {
+    const colors = new Set();
+    notes.forEach(note => note.color && colors.add(note.color));
+    return Array.from(colors).sort();
+  }, [notes]);
+
   const filteredAndSortedNotes = useMemo(() => {
-    let filtered = notes;
+    let filtered = notes.filter(note => {
+      const matchesSearch = note.title.toLowerCase().includes(searchText.toLowerCase()) ||
+        note.content.toLowerCase().includes(searchText.toLowerCase());
 
-    // Filter by folder
-    if (selectedFolderFilter !== 'all') {
-      filtered = filtered.filter(note => note.folderId === selectedFolderFilter);
-    }
+      const matchesTags = selectedTags.length === 0 ||
+        selectedTags.some(tag => note.tags.includes(tag));
 
-    // Filter by tag
-    if (selectedTagFilter !== 'all') {
-      filtered = filtered.filter(note => note.tags.includes(selectedTagFilter));
-    }
+      const matchesColors = selectedColors.length === 0 ||
+        selectedColors.includes(note.color);
 
-    // Search
-    if (searchTerm) {
-      const lowerSearchTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter(note =>
-        note.title.toLowerCase().includes(lowerSearchTerm) ||
-        note.content.toLowerCase().includes(lowerSearchTerm) ||
-        note.tags.some(tag => tag.toLowerCase().includes(lowerSearchTerm))
-      );
-    }
+      return matchesSearch && matchesTags && matchesColors;
+    });
 
-    // Sort
     filtered.sort((a, b) => {
-      const dateA = new Date(a.updatedAt);
-      const dateB = new Date(b.updatedAt);
-      const titleA = a.title.toLowerCase();
-      const titleB = b.title.toLowerCase();
-
-      switch (sortOption) {
-        case 'updatedAt_desc': return dateB - dateA;
-        case 'updatedAt_asc': return dateA - dateB;
-        case 'createdAt_desc': return new Date(b.createdAt) - new Date(a.createdAt);
-        case 'createdAt_asc': return new Date(a.createdAt) - new Date(b.createdAt);
-        case 'title_asc': return titleA.localeCompare(titleB);
-        case 'title_desc': return titleB.localeCompare(titleA);
-        default: return 0;
+      let comparison = 0;
+      if (sortBy === 'title') {
+        comparison = a.title.localeCompare(b.title);
+      } else if (sortBy === 'modifiedAt' || sortBy === 'createdAt') {
+        const dateA = new Date(a[sortBy]).getTime();
+        const dateB = new Date(b[sortBy]).getTime();
+        comparison = dateA - dateB;
       }
+      return sortOrder === 'asc' ? comparison : -comparison;
     });
 
     return filtered;
-  }, [notes, searchTerm, selectedFolderFilter, selectedTagFilter, sortOption]);
+  }, [notes, searchText, selectedTags, selectedColors, sortBy, sortOrder]);
 
-  const SortOptionModal = () => (
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={showSortModal}
-      onRequestClose={() => setShowSortModal(false)}
-    >
-      <Pressable style={styles.modalOverlay} onPress={() => setShowSortModal(false)}>
-        <View style={styles.sortModalContent}>
-          <Text style={styles.sortModalTitle}>Sort By</Text>
-          {[
-            { label: 'Last Modified (Newest)', value: 'updatedAt_desc' },
-            { label: 'Last Modified (Oldest)', value: 'updatedAt_asc' },
-            { label: 'Created Date (Newest)', value: 'createdAt_desc' },
-            { label: 'Created Date (Oldest)', value: 'createdAt_asc' },
-            { label: 'Title (A-Z)', value: 'title_asc' },
-            { label: 'Title (Z-A)', value: 'title_desc' }
-          ].map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              style={styles.sortOptionItem}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setSortOption(option.value);
-                setShowSortModal(false);
-              }}
-            >
-              <Text style={[
-                styles.sortOptionText,
-                sortOption === option.value && styles.sortOptionTextSelected
-              ]}>
-                {option.label}
-              </Text>
-              {sortOption === option.value && <Text style={styles.sortOptionCheck}>{' \u2705'}</Text>}
-            </TouchableOpacity>
-          ))}
-        </View>
-      </Pressable>
-    </Modal>
-  );
+  const handleToggleTag = (tag) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleToggleColor = (color) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedColors(prev =>
+      prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]
+    );
+  };
+
+  const handleSortChange = (newSortBy) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (sortBy === newSortBy) {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(newSortBy);
+      setSortOrder('desc'); // Default to descending for new sort
+    }
+  };
+
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await refreshNotes();
+    showToast('Notes refreshed!', 'success');
+    setIsRefreshing(false);
+  }, [refreshNotes, showToast]);
 
   return (
-    <View style={styles.screenContainer}>
-      <Header
-        title="All Notes"
-        showAddButton={true}
-        onAddPress={() => navigateToNotes('add')}
-        rightButton={true}
-        rightButtonIcon={'\u{1F504}'}
-        onRightButtonPress={refreshNotes}
+    <SafeAreaView style={styles.screenContainer}>
+      <Header title="All Notes" />
+      <SearchBar
+        searchText={searchText}
+        onSearchChange={setSearchText}
+        onClearSearch={() => setSearchText('')}
       />
-      <SearchBar searchTerm={searchTerm} onSearchChange={setSearchTerm} placeholder="Search notes, tags..." />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterBar}>
-        <FilterChip
-          label="All Notes"
-          isSelected={selectedFolderFilter === 'all' && selectedTagFilter === 'all'}
-          onPress={() => { setSelectedFolderFilter('all'); setSelectedTagFilter('all'); }}
-        />
-        {folders.map(folder => (
-          <FilterChip
-            key={folder.id}
-            label={folder.name}
-            isSelected={selectedFolderFilter === folder.id}
-            onPress={() => { setSelectedFolderFilter(folder.id); setSelectedTagFilter('all'); }}
-          />
-        ))}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterSortContainer}>
+        <Text style={styles.filterSortLabel}>Tags:</Text>
         {allTags.map(tag => (
           <FilterChip
             key={tag}
-            label={`#${tag}`}
-            isSelected={selectedTagFilter === tag}
-            onPress={() => { setSelectedTagFilter(tag); setSelectedFolderFilter('all'); }}
+            label={tag}
+            selected={selectedTags.includes(tag)}
+            onPress={() => handleToggleTag(tag)}
           />
         ))}
+        <Text style={styles.filterSortLabel}>Colors:</Text>
+        {allColors.map(color => (
+          <FilterChip
+            key={color}
+            label={color}
+            selected={selectedColors.includes(color)}
+            onPress={() => handleToggleColor(color)}
+          />
+        ))}
+        <Text style={styles.filterSortLabel}>Sort by:</Text>
+        <SortOption
+          label={`Title ${sortBy === 'title' ? (sortOrder === 'asc' ? '\u25B2' : '\u25BC') : ''}`}
+          selected={sortBy === 'title'}
+          onPress={() => handleSortChange('title')}
+        />
+        <SortOption
+          label={`Modified ${sortBy === 'modifiedAt' ? (sortOrder === 'asc' ? '\u25B2' : '\u25BC') : ''}`}
+          selected={sortBy === 'modifiedAt'}
+          onPress={() => handleSortChange('modifiedAt')}
+        />
+        <SortOption
+          label={`Created ${sortBy === 'createdAt' ? (sortOrder === 'asc' ? '\u25B2' : '\u25BC') : ''}`}
+          selected={sortBy === 'createdAt'}
+          onPress={() => handleSortChange('createdAt')}
+        />
       </ScrollView>
-
-      <View style={styles.sortOptionsContainer}>
-        <TouchableOpacity onPress={() => setShowSortModal(true)} style={styles.sortButton}>
-          <Text style={styles.sortButtonText}>{' \u{2B07}'} Sort: {sortOption.split('_')[0].replace('At', '')} {sortOption.includes('desc') ? 'Desc' : 'Asc'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {isRefreshing && <ActivityIndicator size="small" color={Theme.accent} style={{ marginTop: 16 }} />}
 
       {filteredAndSortedNotes.length === 0 ? (
         <EmptyState
-          icon="\u{1F4DD}"
+          icon="\u{1F50D}"
           message="No notes found matching your criteria."
           ctaText="Clear Filters"
           onCtaPress={() => {
-            setSearchTerm('');
-            setSelectedFolderFilter('all');
-            setSelectedTagFilter('all');
+            setSearchText('');
+            setSelectedTags([]);
+            setSelectedColors([]);
           }}
         />
       ) : (
@@ -617,1149 +814,713 @@ const NotesListScreen = ({ notes, folders, navigateToNotes, onToggleFavorite, sh
           renderItem={({ item }) => (
             <NoteCard
               note={item}
-              folderName={getFolderName(item.folderId)}
-              onPress={() => navigateToNotes('detail', item.id)}
+              onPress={navigateTo}
               onToggleFavorite={onToggleFavorite}
             />
           )}
           contentContainerStyle={styles.flatListContent}
-          onRefresh={refreshNotes}
           refreshing={isRefreshing}
+          onRefresh={onRefresh}
+          showsVerticalScrollIndicator={false}
         />
       )}
-      <SortOptionModal />
-    </View>
+    </SafeAreaView>
   );
 };
 
-const NoteDetailScreen = ({ note, folderName, onBack, onDeleteNote, onEditNote, onToggleFavorite, showToast }) => {
+const NoteDetailScreen = ({ route, notes, goBack, navigateTo, onDeleteNote, onToggleFavorite, showToast }) => {
+  const { noteId } = route.params;
+  const note = useMemo(() => notes.find(n => n.id === noteId), [notes, noteId]);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (!note) {
+      // If note is deleted or not found, go back
+      goBack();
+      showToast('Note not found or deleted.', 'danger');
+    }
+  }, [note, goBack, showToast]);
+
+  const handleDeletePress = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    setDeleteModalVisible(true);
+  }, []);
+
+  const confirmDelete = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    onDeleteNote(noteId);
+    setDeleteModalVisible(false);
+    goBack();
+    showToast('Note deleted successfully!', 'success');
+  }, [onDeleteNote, noteId, goBack, showToast]);
+
+  const handleShare = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Simulate sharing
+    Alert.alert(
+      'Share Note',
+      `Sharing "${note.title}" with content:\n\n"${note.content}"`,
+      [{ text: 'OK' }]
+    );
+    showToast('Note shared (simulated)!', 'info');
+  }, [note, showToast]);
+
   if (!note) {
     return (
-      <View style={styles.screenContainer}>
-        <Header title="Note Not Found" onBack={onBack} />
-        <EmptyState icon="\u274C" message="The note you are looking for does not exist." ctaText="Go Back" onCtaPress={onBack} />
-      </View>
+      <SafeAreaView style={styles.screenContainer}>
+        <Header title="Note Not Found" onBack={goBack} />
+        <EmptyState icon="\u274C" message="Oops! This note doesn't exist anymore." />
+      </SafeAreaView>
     );
   }
 
-  const handleDelete = () => {
-    Alert.alert(
-      'Delete Note',
-      `Are you sure you want to delete "${note.title}"? This cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          onPress: () => {
-            onDeleteNote(note.id);
-            showToast('Note deleted successfully!', 'success');
-            onBack();
-          },
-          style: 'destructive'
-        }
-      ]
-    );
-  };
-
-  const handleShare = () => {
-    shareNote({ ...note, folderName });
-    showToast('Note shared!', 'success');
-  };
-
   return (
-    <View style={styles.screenContainer}>
+    <SafeAreaView style={styles.screenContainer}>
       <Header
         title={note.title}
-        onBack={onBack}
-        rightButton={true}
-        rightButtonText="Edit"
-        rightButtonIcon={'\u270F'}
-        onRightButtonPress={() => onEditNote(note.id)}
+        onBack={goBack}
+        rightActionIcon={note.isFavorite ? '\u2764' : '\u2661'}
+        onRightAction={() => {
+          onToggleFavorite(note.id);
+          showToast(note.isFavorite ? 'Removed from favorites' : 'Added to favorites', 'info');
+        }}
       />
-      <ScrollView contentContainerStyle={styles.detailScrollContent}>
-        <View style={styles.detailCard}>
-          <Text style={styles.detailTitle}>{note.title}</Text>
-          <Text style={styles.detailContent}>{note.content}</Text>
+      <ScrollView contentContainerStyle={styles.detailScrollViewContent}>
+        <View style={[styles.detailColorBar, { backgroundColor: getNoteColorHex(note.color) }]} />
+        <Text style={styles.detailContent}>{note.content}</Text>
 
-          {note.audioUri && (
-            <View style={styles.detailSection}>
-              <Text style={styles.detailSectionTitle}>Audio Recording</Text>
-              <AudioPlayer audioUri={note.audioUri} />
-            </View>
-          )}
-
-          <View style={styles.detailSection}>
-            <Text style={styles.detailSectionTitle}>Details</Text>
-            <Text style={styles.detailMeta}>{' \u{1F4CD}'} Folder: {folderName}</Text>
-            {note.tags && note.tags.length > 0 && (
-              <View style={styles.detailTagsContainer}>
-                <Text style={styles.detailMeta}>{' \u{1F3F7}'} Tags: </Text>
-                {note.tags.map((tag, index) => (
-                  <Text key={index} style={styles.detailTag}>#{tag}</Text>
-                ))}
-              </View>
-            )}
-            <Text style={styles.detailMeta}>{' \u{1F4C5}'} Created: {formatDate(note.createdAt)}</Text>
-            <Text style={styles.detailMeta}>{' \u{1F504}'} Last Updated: {getTimeAgo(note.updatedAt)}</Text>
-          </View>
-
-          <View style={styles.detailActionButtons}>
-            <CustomButton
-              title={note.isFavorite ? 'Unfavorite' : 'Favorite'}
-              icon={note.isFavorite ? '\u2764' : '\u2661'}
-              onPress={() => {
-                onToggleFavorite(note.id);
-                showToast(note.isFavorite ? 'Removed from favorites' : 'Added to favorites', 'success');
-              }}
-              style={styles.detailActionButton}
-            />
-            <CustomButton
-              title="Share"
-              icon={'\u{1F4E4}'}
-              onPress={handleShare}
-              style={styles.detailActionButton}
-            />
-            <CustomButton
-              title="Delete"
-              icon={'\u{1F5D1}'}
-              onPress={handleDelete}
-              style={[styles.detailActionButton, { backgroundColor: Theme.danger }]}
-            />
-          </View>
-        </View>
-      </ScrollView>
-    </View>
-  );
-};
-
-const AddEditNoteScreen = ({ noteToEdit, onBack, onSaveNote, folders, showToast }) => {
-  const [title, setTitle] = useState(noteToEdit ? noteToEdit.title : '');
-  const [content, setContent] = useState(noteToEdit ? noteToEdit.content : '');
-  const [selectedFolderId, setSelectedFolderId] = useState(noteToEdit ? noteToEdit.folderId : (folders.length > 0 ? folders[0].id : ''));
-  const [tagsInput, setTagsInput] = useState(noteToEdit ? noteToEdit.tags.join(', ') : '');
-  const [audioUri, setAudioUri] = useState(noteToEdit ? noteToEdit.audioUri : null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0); // in seconds
-  const [showFolderModal, setShowFolderModal] = useState(false);
-  const recordingIntervalRef = useRef(null);
-
-  useEffect(() => {
-    if (isRecording) {
-      recordingIntervalRef.current = setInterval(() => {
-        setRecordingDuration(prev => prev + 1);
-      }, 1000);
-    } else {
-      clearInterval(recordingIntervalRef.current);
-    }
-    return () => clearInterval(recordingIntervalRef.current);
-  }, [isRecording]);
-
-  const handleSave = () => {
-    if (!title.trim()) {
-      showToast('Note title cannot be empty!', 'danger');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return;
-    }
-    if (!selectedFolderId && folders.length > 0) {
-      showToast('Please select a folder!', 'danger');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return;
-    }
-
-    const newTags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
-
-    const newNote = {
-      id: noteToEdit ? noteToEdit.id : generateId(),
-      title,
-      content,
-      folderId: selectedFolderId,
-      tags: newTags,
-      isFavorite: noteToEdit ? noteToEdit.isFavorite : false,
-      audioUri: audioUri,
-      createdAt: noteToEdit ? noteToEdit.createdAt : new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    onSaveNote(newNote);
-    showToast(noteToEdit ? 'Note updated successfully!' : 'Note created successfully!', 'success');
-    onBack();
-  };
-
-  const toggleRecording = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (isRecording) {
-      setIsRecording(false);
-      // Simulate saving audio
-      setAudioUri(`audio/${generateId()}.m4a`);
-      setRecordingDuration(0);
-    } else {
-      setIsRecording(true);
-      setAudioUri(null); // Clear previous audio when starting new recording
-    }
-  };
-
-  const removeAudio = () => {
-    Alert.alert(
-      'Remove Audio',
-      'Are you sure you want to remove this audio recording?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', onPress: () => setAudioUri(null), style: 'destructive' }
-      ]
-    );
-  };
-
-  const formatAudioDuration = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  const FolderSelectionModal = () => (
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={showFolderModal}
-      onRequestClose={() => setShowFolderModal(false)}
-    >
-      <Pressable style={styles.modalOverlay} onPress={() => setShowFolderModal(false)}>
-        <View style={styles.folderModalContent}>
-          <Text style={styles.folderModalTitle}>Select Folder</Text>
-          <ScrollView>
-            {folders.map(folder => (
-              <TouchableOpacity
-                key={folder.id}
-                style={styles.folderOptionItem}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedFolderId(folder.id);
-                  setShowFolderModal(false);
-                }}
-              >
-                <Text style={[
-                  styles.folderOptionText,
-                  selectedFolderId === folder.id && styles.folderOptionTextSelected
-                ]}>
-                  {folder.name}
-                </Text>
-                {selectedFolderId === folder.id && <Text style={styles.folderOptionCheck}>{' \u2705'}</Text>}
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          <CustomButton title="Cancel" onPress={() => setShowFolderModal(false)} style={styles.modalCancelButton} />
-        </View>
-      </Pressable>
-    </Modal>
-  );
-
-  return (
-    <View style={styles.screenContainer}>
-      <Header
-        title={noteToEdit ? 'Edit Note' : 'Create Note'}
-        onBack={onBack}
-        rightButton={true}
-        rightButtonText="Save"
-        rightButtonIcon={'\u{1F4BE}'}
-        onRightButtonPress={handleSave}
-      />
-      <ScrollView contentContainerStyle={styles.formScrollContent}>
-        <View style={styles.formGroup}>
-          <Text style={styles.formLabel}>Title</Text>
-          <TextInput
-            style={styles.formInput}
-            placeholder="Note title..."
-            placeholderTextColor={Theme.secondary}
-            value={title}
-            onChangeText={setTitle}
-            selectionColor={Theme.accent}
-          />
+        <View style={styles.detailMetaContainer}>
+          <Text style={styles.detailMetaText}>
+            <Text style={{ fontWeight: 'bold' }}>Created:</Text> {formatDate(note.createdAt)}
+          </Text>
+          <Text style={styles.detailMetaText}>
+            <Text style={{ fontWeight: 'bold' }}>Last Modified:</Text> {formatDate(note.modifiedAt)} ({getTimeAgo(note.modifiedAt)})
+          </Text>
         </View>
 
-        <View style={styles.formGroup}>
-          <Text style={styles.formLabel}>Content</Text>
-          <TextInput
-            style={[styles.formInput, styles.formInputMultiline]}
-            placeholder="Note content..."
-            placeholderTextColor={Theme.secondary}
-            value={content}
-            onChangeText={setContent}
-            multiline
-            numberOfLines={6}
-            textAlignVertical="top"
-            selectionColor={Theme.accent}
-          />
-        </View>
-
-        <View style={styles.formGroup}>
-          <Text style={styles.formLabel}>Folder</Text>
-          <TouchableOpacity onPress={() => setShowFolderModal(true)} style={styles.folderSelectButton}>
-            <Text style={styles.folderSelectButtonText}>
-              {selectedFolderId ? (folders.find(f => f.id === selectedFolderId)?.name || 'Select Folder') : 'Select Folder'}
-            </Text>
-            <Text style={styles.folderSelectButtonIcon}>{' \u2B9E'}</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.formGroup}>
-          <Text style={styles.formLabel}>Tags (comma separated)</Text>
-          <TextInput
-            style={styles.formInput}
-            placeholder="work, idea, personal"
-            placeholderTextColor={Theme.secondary}
-            value={tagsInput}
-            onChangeText={setTagsInput}
-            selectionColor={Theme.accent}
-          />
-        </View>
-
-        <View style={styles.formGroup}>
-          <Text style={styles.formLabel}>Audio Recording</Text>
-          <View style={styles.audioControls}>
-            <CustomButton
-              title={isRecording ? 'Stop Recording' : 'Record Audio'}
-              icon={isRecording ? '\u23F9' : '\u{1F3A4}'}
-              onPress={toggleRecording}
-              style={[styles.recordButton, isRecording && { backgroundColor: Theme.danger }]}
-            />
-            {isRecording && <Text style={styles.recordingStatus}>Recording: {formatAudioDuration(recordingDuration)}</Text>}
-            {!isRecording && audioUri && (
-              <View style={styles.audioPlaybackContainer}>
-                <AudioPlayer audioUri={audioUri} />
-                <CustomButton
-                  title="Remove"
-                  icon={'\u{1F5D1}'}
-                  onPress={removeAudio}
-                  style={{ backgroundColor: Theme.muted, marginLeft: 10, paddingVertical: 8, paddingHorizontal: 12 }}
-                  textStyle={{ fontSize: 14 }}
-                />
-              </View>
+        <View style={styles.detailTagsContainer}>
+          <Text style={styles.detailTagsLabel}>Tags:</Text>
+          <View style={styles.detailTagsList}>
+            {note.tags.length > 0 ? (
+              note.tags.map((tag, index) => <TagBadge key={index} tag={tag} />)
+            ) : (
+              <Text style={styles.detailMetaText}>No tags</Text>
             )}
           </View>
         </View>
+
+        <View style={styles.detailActions}>
+          <Button title="\u270F Edit" onPress={() => navigateTo('NoteForm', { noteId: note.id })} primary style={styles.detailActionButton} />
+          <Button title="\u{1F4E4} Share" onPress={handleShare} style={styles.detailActionButton} />
+          <Button title="\u{1F5D1} Delete" onPress={handleDeletePress} danger style={styles.detailActionButton} />
+        </View>
       </ScrollView>
-      <FolderSelectionModal />
-    </View>
-  );
-};
 
-const FoldersScreen = ({ folders, notes, onBack, onCreateFolder, onUpdateFolder, onDeleteFolder, showToast }) => {
-  const [showAddEditFolderModal, setShowAddEditFolderModal] = useState(false);
-  const [currentFolder, setCurrentFolder] = useState(null); // For editing
-
-  const getNoteCountForFolder = useCallback((folderId) => {
-    return notes.filter(note => note.folderId === folderId).length;
-  }, [notes]);
-
-  const handleEditFolder = (folder) => {
-    setCurrentFolder(folder);
-    setShowAddEditFolderModal(true);
-  };
-
-  const handleDeleteFolder = (folderId) => {
-    const noteCount = getNoteCountForFolder(folderId);
-    Alert.alert(
-      'Delete Folder',
-      `Are you sure you want to delete this folder? It contains ${noteCount} notes. These notes will become uncategorized.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          onPress: () => {
-            onDeleteFolder(folderId);
-            showToast('Folder deleted successfully!', 'success');
-          },
-          style: 'destructive'
-        }
-      ]
-    );
-  };
-
-  const AddEditFolderModal = () => {
-    const [folderName, setFolderName] = useState(currentFolder ? currentFolder.name : '');
-
-    const handleSaveFolder = () => {
-      if (!folderName.trim()) {
-        showToast('Folder name cannot be empty!', 'danger');
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        return;
-      }
-      if (currentFolder) {
-        onUpdateFolder({ ...currentFolder, name: folderName });
-        showToast('Folder updated successfully!', 'success');
-      } else {
-        onCreateFolder({ id: generateId(), name: folderName });
-        showToast('Folder created successfully!', 'success');
-      }
-      setFolderName('');
-      setCurrentFolder(null);
-      setShowAddEditFolderModal(false);
-    };
-
-    return (
       <Modal
         animationType="fade"
         transparent={true}
-        visible={showAddEditFolderModal}
-        onRequestClose={() => {
-          setShowAddEditFolderModal(false);
-          setCurrentFolder(null);
-        }}
+        visible={deleteModalVisible}
+        onRequestClose={() => setDeleteModalVisible(false)}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => {
-          setShowAddEditFolderModal(false);
-          setCurrentFolder(null);
-        }}>
-          <Pressable style={styles.addEditFolderModalContent}>
-            <Text style={styles.addEditFolderModalTitle}>{currentFolder ? 'Edit Folder' : 'Create New Folder'}</Text>
-            <TextInput
-              style={styles.formInput}
-              placeholder="Folder name..."
-              placeholderTextColor={Theme.secondary}
-              value={folderName}
-              onChangeText={setFolderName}
-              selectionColor={Theme.accent}
-            />
-            <View style={styles.modalButtonContainer}>
-              <CustomButton
-                title="Cancel"
-                onPress={() => {
-                  setShowAddEditFolderModal(false);
-                  setCurrentFolder(null);
-                }}
-                style={[styles.modalButton, { backgroundColor: Theme.muted }]}
-              />
-              <CustomButton
-                title={currentFolder ? 'Update' : 'Create'}
-                onPress={handleSaveFolder}
-                style={styles.modalButton}
-              />
+        <Pressable style={styles.modalOverlay} onPress={() => setDeleteModalVisible(false)}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Confirm Deletion</Text>
+            <Text style={styles.modalMessage}>Are you sure you want to delete "{note.title}"? This action cannot be undone.</Text>
+            <View style={styles.modalActions}>
+              <Button title="Cancel" onPress={() => setDeleteModalVisible(false)} style={{ flex: 1, marginRight: 8 }} />
+              <Button title="Delete" onPress={confirmDelete} danger style={{ flex: 1, marginLeft: 8 }} />
             </View>
-          </Pressable>
+          </View>
         </Pressable>
       </Modal>
-    );
-  };
-
-  return (
-    <View style={styles.screenContainer}>
-      <Header
-        title="Folders"
-        showAddButton={true}
-        onAddPress={() => {
-          setCurrentFolder(null);
-          setShowAddEditFolderModal(true);
-        }}
-      />
-      {folders.length === 0 ? (
-        <EmptyState
-          icon="\u{1F4C1}"
-          message="No folders yet!"
-          ctaText="Create a new folder"
-          onCtaPress={() => setShowAddEditFolderModal(true)}
-        />
-      ) : (
-        <FlatList
-          data={folders}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <FolderCard
-              folder={item}
-              noteCount={getNoteCountForFolder(item.id)}
-              onPress={() => { /* Not implemented: drill down to notes in folder */ showToast(`Viewing notes in "${item.name}"`, 'secondary'); }}
-              onEdit={handleEditFolder}
-              onDelete={handleDeleteFolder}
-            />
-          )}
-          contentContainerStyle={styles.flatListContent}
-        />
-      )}
-      <AddEditFolderModal />
-    </View>
+    </SafeAreaView>
   );
 };
 
-const SettingsScreen = ({ settings, onUpdateSettings, showToast, clearAllData }) => {
-  const [showClearDataModal, setShowClearDataModal] = useState(false);
+const NoteFormScreen = ({ route, notes, goBack, onSaveNote, showToast }) => {
+  const { noteId } = route.params || {};
+  const isEditing = !!noteId;
+  const existingNote = isEditing ? notes.find(n => n.id === noteId) : null;
 
-  const handleClearAllData = () => {
-    Alert.alert(
-      'Clear All Data',
-      'Are you sure you want to delete ALL notes, folders, and settings? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete All',
-          onPress: () => {
-            clearAllData();
-            showToast('All data cleared successfully!', 'success');
-          },
-          style: 'destructive'
-        }
-      ]
+  const [title, setTitle] = useState(existingNote?.title || '');
+  const [content, setContent] = useState(existingNote?.content || '');
+  const [selectedTags, setSelectedTags] = useState(existingNote?.tags || []);
+  const [selectedColor, setSelectedColor] = useState(existingNote?.color || 'Blue');
+  const [errors, setErrors] = useState({});
+
+  const availableTags = useMemo(() => Object.keys(TAG_COLORS), []);
+
+  useEffect(() => {
+    // If editing a note that no longer exists, go back
+    if (isEditing && !existingNote) {
+      goBack();
+      showToast('Note to edit not found.', 'danger');
+    }
+  }, [isEditing, existingNote, goBack, showToast]);
+
+  const validateForm = useCallback(() => {
+    const newErrors = {};
+    if (!title.trim()) newErrors.title = 'Title cannot be empty.';
+    if (!content.trim()) newErrors.content = 'Content cannot be empty.';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [title, content]);
+
+  const handleSave = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    if (!validateForm()) {
+      showToast('Please fix the errors in the form.', 'danger');
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const newNote = {
+      id: isEditing ? noteId : generateId(),
+      title,
+      content,
+      tags: selectedTags,
+      color: selectedColor,
+      createdAt: existingNote?.createdAt || now,
+      modifiedAt: now,
+      isFavorite: existingNote?.isFavorite || false
+    };
+    onSaveNote(newNote);
+    goBack();
+    showToast(`Note ${isEditing ? 'updated' : 'created'} successfully!`, 'success');
+  }, [isEditing, noteId, title, content, selectedTags, selectedColor, existingNote, onSaveNote, goBack, validateForm, showToast]);
+
+  const handleToggleTag = useCallback((tag) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     );
-  };
+  }, []);
 
   return (
-    <View style={styles.screenContainer}>
-      <Header title="Settings" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.settingsSection}>
-          <Text style={styles.settingsSectionTitle}>General</Text>
-          <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Confirm Deletion</Text>
+    <SafeAreaView style={styles.screenContainer}>
+      <Header
+        title={isEditing ? 'Edit Note' : 'Create Note'}
+        onBack={goBack}
+        rightActionText="Save"
+        onRightAction={handleSave}
+      />
+      <ScrollView contentContainerStyle={styles.formScrollViewContent}>
+        <Text style={styles.formLabel}>Title</Text>
+        <TextInput
+          style={[styles.formInput, errors.title && styles.inputError]}
+          placeholder="Note Title"
+          placeholderTextColor={COLORS.secondary}
+          value={title}
+          onChangeText={setTitle}
+        />
+        {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+
+        <Text style={styles.formLabel}>Content</Text>
+        <TextInput
+          style={[styles.formInput, styles.formContentInput, errors.content && styles.inputError]}
+          placeholder="Write your note here..."
+          placeholderTextColor={COLORS.secondary}
+          value={content}
+          onChangeText={setContent}
+          multiline
+          textAlignVertical="top"
+        />
+        {errors.content && <Text style={styles.errorText}>{errors.content}</Text>}
+
+        <Text style={styles.formLabel}>Color</Text>
+        <ColorPicker selectedColor={selectedColor} onSelectColor={setSelectedColor} />
+
+        <Text style={styles.formLabel}>Tags</Text>
+        <View style={styles.tagSelectorContainer}>
+          {availableTags.map(tag => (
+            <FilterChip
+              key={tag}
+              label={tag}
+              selected={selectedTags.includes(tag)}
+              onPress={() => handleToggleTag(tag)}
+            />
+          ))}
+        </View>
+
+        <Button title={isEditing ? "Update Note" : "Create Note"} onPress={handleSave} primary style={styles.formSubmitButton} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const ProfileScreen = ({ settings, onUpdateSettings, goBack, showToast }) => {
+  const [cloudSyncEnabled, setCloudSyncEnabled] = useState(settings.cloudSync);
+  const [hapticFeedbackEnabled, setHapticFeedbackEnabled] = useState(settings.hapticFeedback);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setCloudSyncEnabled(settings.cloudSync);
+    setHapticFeedbackEnabled(settings.hapticFeedback);
+  }, [settings]);
+
+  const handleCloudSyncToggle = useCallback((value) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setCloudSyncEnabled(value);
+    onUpdateSettings({ ...settings, cloudSync: value });
+    showToast(`Cloud Sync ${value ? 'enabled' : 'disabled'}`, 'info');
+  }, [settings, onUpdateSettings, showToast]);
+
+  const handleHapticFeedbackToggle = useCallback((value) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setHapticFeedbackEnabled(value);
+    onUpdateSettings({ ...settings, hapticFeedback: value });
+    showToast(`Haptic Feedback ${value ? 'enabled' : 'disabled'}`, 'info');
+  }, [settings, onUpdateSettings, showToast]);
+
+  const handleCloudBackup = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setIsLoading(true);
+    showToast('Initiating cloud backup...', 'info');
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      showToast('Cloud backup complete!', 'success');
+    }, 2000);
+  }, [showToast]);
+
+  const handleContactSupport = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const email = 'support@notepadapp.com';
+    Linking.openURL(`mailto:${email}`).catch(() => {
+      Alert.alert('Error', 'Could not open email client. Please contact support at ' + email);
+    });
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.screenContainer}>
+      <Header title="Settings & Profile" onBack={goBack} />
+      <ScrollView contentContainerStyle={styles.profileScrollViewContent}>
+        <View style={styles.profileSection}>
+          <Text style={styles.sectionTitle}>Account</Text>
+          <View style={styles.profileItem}>
+            <Text style={styles.profileLabel}>User:</Text>
+            <Text style={styles.profileValue}>Notepad User \u{1F464}</Text>
+          </View>
+          <View style={styles.profileItem}>
+            <Text style={styles.profileLabel}>Email:</Text>
+            <Text style={styles.profileValue}>user@example.com</Text>
+          </View>
+        </View>
+
+        <View style={styles.profileSection}>
+          <Text style={styles.sectionTitle}>Sync & Backup</Text>
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>Cloud Sync</Text>
             <Switch
-              trackColor={{ false: Theme.muted, true: Theme.accent }}
-              thumbColor={Platform.OS === 'android' ? '#f4f3f4' : ''}
-              ios_backgroundColor={Theme.muted}
-              onValueChange={(value) => onUpdateSettings('confirmDeletion', value)}
-              value={settings.confirmDeletion}
+              trackColor={{ false: COLORS.muted, true: COLORS.accent }}
+              thumbColor={cloudSyncEnabled ? COLORS.text : COLORS.secondary}
+              ios_backgroundColor={COLORS.muted}
+              onValueChange={handleCloudSyncToggle}
+              value={cloudSyncEnabled}
             />
           </View>
-        </View>
-
-        <View style={styles.settingsSection}>
-          <Text style={styles.settingsSectionTitle}>About App</Text>
-          <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>App Version</Text>
-            <Text style={styles.settingValue}>1.0.0</Text>
-          </View>
-          <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Developer</Text>
-            <Text style={styles.settingValue}>ZeroBuild AI</Text>
-          </View>
-          <TouchableOpacity onPress={() => Linking.openURL('https://www.google.com')} style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Privacy Policy</Text>
-            <Text style={styles.settingValue}>{' \u2B9E'}</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.settingsSection}>
-          <CustomButton
-            title="Clear All Data"
-            onPress={handleClearAllData}
-            style={styles.clearDataButton}
-            textStyle={{ color: Theme.background }}
+          <Button
+            title={isLoading ? 'Backing up...' : '\u{1F504} Sync Notes Now'}
+            onPress={handleCloudBackup}
+            disabled={isLoading}
+            style={styles.profileActionButton}
           />
+          <Text style={styles.settingDescription}>
+            Syncs your notes to a simulated cloud service for backup and cross-device access.
+          </Text>
+        </View>
+
+        <View style={styles.profileSection}>
+          <Text style={styles.sectionTitle}>App Preferences</Text>
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>Haptic Feedback</Text>
+            <Switch
+              trackColor={{ false: COLORS.muted, true: COLORS.accent }}
+              thumbColor={hapticFeedbackEnabled ? COLORS.text : COLORS.secondary}
+              ios_backgroundColor={COLORS.muted}
+              onValueChange={handleHapticFeedbackToggle}
+              value={hapticFeedbackEnabled}
+            />
+          </View>
+          <Text style={styles.settingDescription}>
+            Provides subtle vibrations for button presses and actions.
+          </Text>
+        </View>
+
+        <View style={styles.profileSection}>
+          <Text style={styles.sectionTitle}>About</Text>
+          <View style={styles.profileItem}>
+            <Text style={styles.profileLabel}>Version:</Text>
+            <Text style={styles.profileValue}>1.0.0</Text>
+          </View>
+          <Button
+            title="\u{1F4DE} Contact Support"
+            onPress={handleContactSupport}
+            style={styles.profileActionButton}
+          />
+          <Text style={styles.settingDescription}>
+            For any questions or issues, feel free to reach out.
+          </Text>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
 //  MAIN APP 
-export default function App() {
-  const [activeTab, setActiveTab] = useState('home');
-  const [currentScreen, setCurrentScreen] = useState(null); // null, 'detail', 'add', 'edit'
-  const [selectedNoteId, setSelectedNoteId] = useState(null);
-
+const App = () => {
   const [notes, setNotes] = useState([]);
-  const [folders, setFolders] = useState([]);
-  const [settings, setSettings] = useState({ confirmDeletion: true });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshingNotes, setIsRefreshingNotes] = useState(false);
+  const [settings, setSettings] = useState({ cloudSync: false, hapticFeedback: true });
+  const [activeTab, setActiveTab] = useState('home');
+  const [screenStack, setScreenStack] = useState([{ name: 'Home', params: {} }]); // [{ name: 'Home', params: {} }, { name: 'NoteDetail', params: { noteId: '123' } }]
+  const [toast, setToast] = useState({ message: '', type: 'info', isVisible: false });
+  const [isLoadingApp, setIsLoadingApp] = useState(true);
 
-  const [toast, setToast] = useState({ isVisible: false, message: '', type: 'success' });
-  const screenTransitionAnim = useRef(new Animated.Value(0)).current;
+  const currentScreen = useMemo(() => screenStack[screenStack.length - 1], [screenStack]);
 
-  // 1. Load data from AsyncStorage
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const storedNotes = await AsyncStorage.getItem('notes');
-        const storedFolders = await AsyncStorage.getItem('folders');
-        const storedSettings = await AsyncStorage.getItem('settings');
-
-        setNotes(storedNotes ? JSON.parse(storedNotes) : initialNotes);
-        setFolders(storedFolders ? JSON.parse(storedFolders) : initialFolders);
-        setSettings(storedSettings ? JSON.parse(storedSettings) : { confirmDeletion: true });
-      } catch (error) {
-        console.error('Failed to load data from AsyncStorage:', error);
-        showToast('Failed to load data!', 'danger');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadData();
-  }, []);
-
-  // 2. Save data to AsyncStorage whenever state changes
-  useEffect(() => {
-    const saveData = async () => {
-      try {
-        await AsyncStorage.setItem('notes', JSON.stringify(notes));
-        await AsyncStorage.setItem('folders', JSON.stringify(folders));
-        await AsyncStorage.setItem('settings', JSON.stringify(settings));
-      } catch (error) {
-        console.error('Failed to save data to AsyncStorage:', error);
-        showToast('Failed to save data!', 'danger');
-      }
-    };
-    if (!isLoading) { // Only save after initial load
-      saveData();
-    }
-  }, [notes, folders, settings, isLoading]);
-
-  // Screen transition animation
-  useEffect(() => {
-    Animated.timing(screenTransitionAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true
-    }).start();
-    return () => screenTransitionAnim.setValue(0);
-  }, [currentScreen, activeTab, screenTransitionAnim]);
-
-  const showToast = useCallback((message, type = 'success') => {
-    setToast({ isVisible: true, message, type });
+  const showToast = useCallback((message, type = 'info') => {
+    Haptics.notificationAsync(
+      type === 'success' ? Haptics.NotificationFeedbackType.Success :
+        type === 'danger' ? Haptics.NotificationFeedbackType.Error :
+          Haptics.NotificationFeedbackType.Warning
+    );
+    setToast({ message, type, isVisible: true });
   }, []);
 
   const dismissToast = useCallback(() => {
     setToast(prev => ({ ...prev, isVisible: false }));
   }, []);
 
-  const navigateToNotes = useCallback((screen, id = null) => {
-    setSelectedNoteId(id);
-    setCurrentScreen(screen);
-    setActiveTab('notes');
+  const loadAppData = useCallback(async () => {
+    setIsLoadingApp(true);
+    const storedNotes = await loadNotes();
+    const storedSettings = await loadSettings();
+
+    if (storedNotes.length === 0) {
+      setNotes(initialNotes); // Use sample data if no notes are stored
+      await saveNotes(initialNotes);
+    } else {
+      setNotes(storedNotes);
+    }
+    setSettings(storedSettings);
+    setIsLoadingApp(false);
   }, []);
 
-  const handleBack = useCallback(() => {
-    setCurrentScreen(null);
-    setSelectedNoteId(null);
+  useEffect(() => {
+    loadAppData();
+  }, [loadAppData]);
+
+  const refreshNotes = useCallback(async () => {
+    const storedNotes = await loadNotes();
+    setNotes(storedNotes);
   }, []);
 
-  // --- Notes CRUD ---
-  const handleSaveNote = useCallback((newNote) => {
-    setNotes(prevNotes => {
-      const existingIndex = prevNotes.findIndex(note => note.id === newNote.id);
-      if (existingIndex > -1) {
-        return prevNotes.map(note => (note.id === newNote.id ? newNote : note));
-      } else {
-        return [...prevNotes, newNote];
+  const navigateTo = useCallback((screenName, params = {}) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setScreenStack(prev => [...prev, { name: screenName, params }]);
+  }, []);
+
+  const goBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setScreenStack(prev => {
+      if (prev.length > 1) {
+        return prev.slice(0, prev.length - 1);
       }
+      return prev; // Stay on the current screen if it's the root
     });
   }, []);
 
-  const handleDeleteNote = useCallback((id) => {
-    setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
-  }, []);
+  const handleSaveNote = useCallback(async (newNote) => {
+    let updatedNotes;
+    if (notes.some(n => n.id === newNote.id)) {
+      updatedNotes = notes.map(n => (n.id === newNote.id ? newNote : n));
+    } else {
+      updatedNotes = [...notes, newNote];
+    }
+    setNotes(updatedNotes);
+    await saveNotes(updatedNotes);
+  }, [notes]);
 
-  const handleToggleFavorite = useCallback((id) => {
-    setNotes(prevNotes =>
-      prevNotes.map(note =>
-        note.id === id ? { ...note, isFavorite: !note.isFavorite } : note
-      )
+  const handleDeleteNote = useCallback(async (noteId) => {
+    const updatedNotes = notes.filter(n => n.id !== noteId);
+    setNotes(updatedNotes);
+    await saveNotes(updatedNotes);
+  }, [notes]);
+
+  const handleToggleFavorite = useCallback(async (noteId) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const updatedNotes = notes.map(n =>
+      n.id === noteId ? { ...n, isFavorite: !n.isFavorite } : n
     );
+    setNotes(updatedNotes);
+    await saveNotes(updatedNotes);
+  }, [notes]);
+
+  const handleUpdateSettings = useCallback(async (newSettings) => {
+    setSettings(newSettings);
+    await saveSettings(newSettings);
   }, []);
 
-  const refreshNotes = useCallback(async () => {
-    setIsRefreshingNotes(true);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network refresh
-    // In a real app, this would re-fetch from backend. Here, just set refreshing to false.
-    setIsRefreshingNotes(false);
-    showToast('Notes refreshed!', 'secondary');
-  }, [showToast]);
-
-  // --- Folders CRUD ---
-  const handleCreateFolder = useCallback((newFolder) => {
-    setFolders(prevFolders => [...prevFolders, newFolder]);
-  }, []);
-
-  const handleUpdateFolder = useCallback((updatedFolder) => {
-    setFolders(prevFolders =>
-      prevFolders.map(folder => (folder.id === updatedFolder.id ? updatedFolder : folder))
-    );
-  }, []);
-
-  const handleDeleteFolder = useCallback((id) => {
-    setFolders(prevFolders => prevFolders.filter(folder => folder.id !== id));
-    setNotes(prevNotes =>
-      prevNotes.map(note => (note.folderId === id ? { ...note, folderId: null } : note))
-    ); // Uncategorize notes
-  }, []);
-
-  // --- Settings ---
-  const handleUpdateSettings = useCallback((key, value) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-  }, []);
-
-  const handleClearAllData = useCallback(async () => {
-    try {
-      await AsyncStorage.clear();
-      setNotes(initialNotes);
-      setFolders(initialFolders);
-      setSettings({ confirmDeletion: true });
-      showToast('All app data has been cleared!', 'success');
-    } catch (error) {
-      console.error('Failed to clear all data:', error);
-      showToast('Failed to clear all data!', 'danger');
-    }
-  }, [showToast]);
-
-  const getFolderName = useCallback((folderId) => {
-    const folder = folders.find(f => f.id === folderId);
-    return folder ? folder.name : 'Uncategorized';
-  }, [folders]);
-
-  const renderContent = () => {
-    const selectedNote = selectedNoteId ? notes.find(n => n.id === selectedNoteId) : null;
-
-    if (currentScreen === 'detail') {
-      return (
-        <NoteDetailScreen
-          note={selectedNote}
-          folderName={selectedNote ? getFolderName(selectedNote.folderId) : 'N/A'}
-          onBack={handleBack}
-          onDeleteNote={handleDeleteNote}
-          onEditNote={(id) => { setSelectedNoteId(id); setCurrentScreen('edit'); }}
-          onToggleFavorite={handleToggleFavorite}
-          showToast={showToast}
-        />
-      );
-    }
-    if (currentScreen === 'add' || currentScreen === 'edit') {
-      return (
-        <AddEditNoteScreen
-          noteToEdit={selectedNote}
-          onBack={handleBack}
-          onSaveNote={handleSaveNote}
-          folders={folders}
-          showToast={showToast}
-        />
-      );
-    }
-
-    switch (activeTab) {
-      case 'home':
-        return (
-          <HomeScreen
-            navigateToNotes={navigateToNotes}
-            navigateToFolders={() => setActiveTab('folders')}
-            showToast={showToast}
-            notes={notes}
-            folders={folders}
-          />
-        );
-      case 'notes':
-        return (
-          <NotesListScreen
-            notes={notes}
-            folders={folders}
-            navigateToNotes={navigateToNotes}
-            onToggleFavorite={handleToggleFavorite}
-            showToast={showToast}
-            refreshNotes={refreshNotes}
-            isRefreshing={isRefreshingNotes}
-          />
-        );
-      case 'folders':
-        return (
-          <FoldersScreen
-            folders={folders}
-            notes={notes}
-            onBack={handleBack}
-            onCreateFolder={handleCreateFolder}
-            onUpdateFolder={handleUpdateFolder}
-            onDeleteFolder={handleDeleteFolder}
-            showToast={showToast}
-          />
-        );
-      case 'add':
-        return (
-          <AddEditNoteScreen
-            noteToEdit={null}
-            onBack={() => setActiveTab('home')} // Go back to home after adding
-            onSaveNote={handleSaveNote}
-            folders={folders}
-            showToast={showToast}
-          />
-        );
-      case 'settings':
-        return (
-          <SettingsScreen
-            settings={settings}
-            onUpdateSettings={handleUpdateSettings}
-            showToast={showToast}
-            clearAllData={handleClearAllData}
-          />
-        );
+  const renderScreen = useCallback((screen) => {
+    switch (screen.name) {
+      case 'Home':
+        return <HomeScreen notes={notes} navigateTo={navigateTo} showToast={showToast} />;
+      case 'NotesList':
+        return <NotesListScreen notes={notes} navigateTo={navigateTo} onToggleFavorite={handleToggleFavorite} showToast={showToast} refreshNotes={refreshNotes} />;
+      case 'NoteDetail':
+        return <NoteDetailScreen route={screen} notes={notes} goBack={goBack} navigateTo={navigateTo} onDeleteNote={handleDeleteNote} onToggleFavorite={handleToggleFavorite} showToast={showToast} />;
+      case 'NoteForm':
+        return <NoteFormScreen route={screen} notes={notes} goBack={goBack} onSaveNote={handleSaveNote} showToast={showToast} />;
+      case 'Profile':
+        return <ProfileScreen settings={settings} onUpdateSettings={handleUpdateSettings} goBack={goBack} showToast={showToast} />;
       default:
-        return null;
+        return <HomeScreen notes={notes} navigateTo={navigateTo} showToast={showToast} />;
     }
-  };
+  }, [notes, settings, navigateTo, goBack, handleSaveNote, handleDeleteNote, handleToggleFavorite, handleUpdateSettings, showToast, refreshNotes]);
 
-  if (isLoading) {
+  const isDetailOrFormScreen = currentScreen.name === 'NoteDetail' || currentScreen.name === 'NoteForm' || currentScreen.name === 'Profile';
+
+  if (isLoadingApp) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <StatusBar style="light" />
-        <ActivityIndicator size="large" color={Theme.accent} />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.accent} />
         <Text style={styles.loadingText}>Loading your notes...</Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.appContainer}>
-      <StatusBar style="light" />
-      <Animated.View style={[styles.contentContainer, { opacity: screenTransitionAnim }]}>
-        {renderContent()}
-      </Animated.View>
+    <View style={styles.appContainer}>
+      <StatusBar style="light" backgroundColor={COLORS.surface} />
 
-      {!currentScreen && ( // Hide tab bar when drilling down
-        <View style={styles.tabBarContainer}>
+      {/* Main Tab Screens */}
+      <AnimatedScreen isVisible={activeTab === 'home' && !isDetailOrFormScreen}>
+        <HomeScreen notes={notes} navigateTo={navigateTo} showToast={showToast} />
+      </AnimatedScreen>
+      <AnimatedScreen isVisible={activeTab === 'browse' && !isDetailOrFormScreen}>
+        <NotesListScreen notes={notes} navigateTo={navigateTo} onToggleFavorite={handleToggleFavorite} showToast={showToast} refreshNotes={refreshNotes} />
+      </AnimatedScreen>
+      <AnimatedScreen isVisible={activeTab === 'add' && !isDetailOrFormScreen}>
+        <NoteFormScreen notes={notes} goBack={() => setActiveTab('home')} onSaveNote={handleSaveNote} showToast={showToast} />
+      </AnimatedScreen>
+      <AnimatedScreen isVisible={activeTab === 'profile' && !isDetailOrFormScreen}>
+        <ProfileScreen settings={settings} onUpdateSettings={handleUpdateSettings} goBack={() => setActiveTab('home')} showToast={showToast} />
+      </AnimatedScreen>
+
+      {/* Detail/Form Screens (rendered on top of tabs) */}
+      <AnimatedScreen isVisible={isDetailOrFormScreen}>
+        {renderScreen(currentScreen)}
+      </AnimatedScreen>
+
+      {!isDetailOrFormScreen && (
+        <View style={styles.tabBar}>
           <TouchableOpacity
             style={styles.tabItem}
-            onPress={() => { Haptics.selectionAsync(); setActiveTab('home'); }}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveTab('home'); setScreenStack([{ name: 'Home', params: {} }]); }}
           >
-            <Text style={[styles.tabIcon, activeTab === 'home' && styles.tabIconActive]}>{'\u{1F3E0}'}</Text>
+            <Text style={[styles.tabIcon, activeTab === 'home' && styles.tabIconActive]}>\u{1F3E0}</Text>
             <Text style={[styles.tabLabel, activeTab === 'home' && styles.tabLabelActive]}>Home</Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.tabItem}
-            onPress={() => { Haptics.selectionAsync(); setActiveTab('notes'); }}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveTab('browse'); setScreenStack([{ name: 'NotesList', params: {} }]); }}
           >
-            <Text style={[styles.tabIcon, activeTab === 'notes' && styles.tabIconActive]}>{'\u{1F4DD}'}</Text>
-            <Text style={[styles.tabLabel, activeTab === 'notes' && styles.tabLabelActive]}>Notes</Text>
+            <Text style={[styles.tabIcon, activeTab === 'browse' && styles.tabIconActive]}>\u{1F50D}</Text>
+            <Text style={[styles.tabLabel, activeTab === 'browse' && styles.tabLabelActive]}>Browse</Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.tabItem}
-            onPress={() => { Haptics.selectionAsync(); setActiveTab('folders'); }}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setActiveTab('add'); setScreenStack([{ name: 'NoteForm', params: {} }]); }}
           >
-            <Text style={[styles.tabIcon, activeTab === 'folders' && styles.tabIconActive]}>{'\u{1F4C1}'}</Text>
-            <Text style={[styles.tabLabel, activeTab === 'folders' && styles.tabLabelActive]}>Folders</Text>
+            <View style={styles.addNoteButton}>
+              <Text style={styles.addNoteIcon}>\u2795</Text>
+            </View>
           </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.tabItem}
-            onPress={() => { Haptics.selectionAsync(); setActiveTab('add'); setCurrentScreen('add'); }}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveTab('favorites'); setScreenStack([{ name: 'NotesList', params: { filter: 'favorites' } }]); }}
           >
-            <Text style={[styles.tabIcon, activeTab === 'add' && styles.tabIconActive]}>{'\u2795'}</Text>
-            <Text style={[styles.tabLabel, activeTab === 'add' && styles.tabLabelActive]}>Add</Text>
+            <Text style={[styles.tabIcon, activeTab === 'favorites' && styles.tabIconActive]}>\u2764</Text>
+            <Text style={[styles.tabLabel, activeTab === 'favorites' && styles.tabLabelActive]}>Favorites</Text>
+            {notes.filter(n => n.isFavorite).length > 0 && (
+              <View style={styles.tabBadge}>
+                <Text style={styles.tabBadgeText}>{notes.filter(n => n.isFavorite).length}</Text>
+              </View>
+            )}
           </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.tabItem}
-            onPress={() => { Haptics.selectionAsync(); setActiveTab('settings'); }}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveTab('profile'); setScreenStack([{ name: 'Profile', params: {} }]); }}
           >
-            <Text style={[styles.tabIcon, activeTab === 'settings' && styles.tabIconActive]}>{'\u2699'}</Text>
-            <Text style={[styles.tabLabel, activeTab === 'settings' && styles.tabLabelActive]}>Settings</Text>
+            <Text style={[styles.tabIcon, activeTab === 'profile' && styles.tabIconActive]}>\u{1F464}</Text>
+            <Text style={[styles.tabLabel, activeTab === 'profile' && styles.tabLabelActive]}>Profile</Text>
           </TouchableOpacity>
         </View>
       )}
-      <Toast message={toast.message} type={toast.type} isVisible={toast.isVisible} onDismiss={dismissToast} />
-    </SafeAreaView>
-  );
-}
 
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onDismiss={dismissToast}
+      />
+    </View>
+  );
+};
+
+//  STYLES 
 const styles = StyleSheet.create({
   appContainer: {
     flex: 1,
-    backgroundColor: Theme.background
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Theme.background
-  },
-  loadingText: {
-    color: Theme.text,
-    marginTop: 10,
-    fontSize: 16
-  },
-  contentContainer: {
-    flex: 1
+    backgroundColor: COLORS.background
   },
   screenContainer: {
     flex: 1,
-    backgroundColor: Theme.background
+    backgroundColor: COLORS.background,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
   },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 80, // For tab bar
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  flatListContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 80
+  loadingText: {
+    color: COLORS.text,
+    marginTop: 16,
+    fontSize: 18
   },
 
   // Header
-  headerContainer: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    backgroundColor: COLORS.surface,
     borderBottomWidth: 1,
-    borderBottomColor: Theme.surface,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 10
+    borderBottomColor: COLORS.border
   },
-  headerLeft: {
-    width: 60
+  headerButton: {
+    padding: 8
   },
-  headerRight: {
-    width: 60,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center'
+  headerButtonText: {
+    color: COLORS.accent,
+    fontSize: 18,
+    fontWeight: '600'
+  },
+  headerButtonPlaceholder: {
+    width: 40, // Match button width for alignment
   },
   headerTitle: {
+    color: COLORS.text,
     fontSize: 20,
-    fontWeight: '700',
-    color: Theme.text,
+    fontWeight: 'bold',
     flex: 1,
     textAlign: 'center'
   },
-  headerButton: {
-    padding: 8,
-    borderRadius: 8
-  },
-  headerButtonText: {
-    color: Theme.accent,
-    fontSize: 16,
-    fontWeight: '500'
-  },
-  headerButtonIcon: {
-    color: Theme.accent,
-    fontSize: 20
-  },
 
   // Tab Bar
-  tabBarContainer: {
+  tabBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: Theme.elevated,
+    backgroundColor: COLORS.surface,
     borderTopWidth: 1,
-    borderTopColor: Theme.surface,
+    borderTopColor: COLORS.border,
     paddingVertical: 8,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    ...shadowStyle
+    paddingBottom: Platform.OS === 'ios' ? 20 : 8, // Adjust for iPhone X safe area
   },
   tabItem: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 4,
-    flex: 1
+    position: 'relative'
   },
   tabIcon: {
     fontSize: 24,
-    color: Theme.muted
+    color: COLORS.secondary
   },
   tabIconActive: {
-    color: Theme.accent
+    color: COLORS.accent
   },
   tabLabel: {
-    fontSize: 12,
-    color: Theme.muted,
-    marginTop: 4
+    fontSize: 11,
+    color: COLORS.secondary,
+    marginTop: 2,
+    fontWeight: '500'
   },
   tabLabelActive: {
-    color: Theme.accent,
-    fontWeight: '600'
+    color: COLORS.accent
+  },
+  tabBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 18,
+    backgroundColor: COLORS.danger,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4
+  },
+  tabBadgeText: {
+    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: 'bold'
+  },
+  addNoteButton: {
+    backgroundColor: COLORS.accent,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOW_STYLE,
+    marginBottom: Platform.OS === 'ios' ? 20 : 0
+  },
+  addNoteIcon: {
+    fontSize: 28,
+    color: COLORS.text
   },
 
-  // Custom Button
-  customButton: {
-    backgroundColor: Theme.accent,
+  // Buttons
+  button: {
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
-    ...shadowStyle
+    ...SHADOW_STYLE
   },
-  customButtonDisabled: {
-    backgroundColor: Theme.muted
-  },
-  customButtonText: {
-    color: Theme.background,
+  buttonText: {
     fontSize: 16,
     fontWeight: '600'
   },
-  customButtonIcon: {
-    fontSize: 18,
-    color: Theme.background,
-    marginRight: 8
-  },
-
-  // Search Bar
-  searchBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Theme.surface,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    margin: 16,
-    ...shadowStyle
-  },
-  searchIcon: {
-    fontSize: 20,
-    color: Theme.secondary,
-    marginRight: 8
-  },
-  searchTextInput: {
-    flex: 1,
-    height: 44,
-    color: Theme.text,
-    fontSize: 16
-  },
-
-  // Filter Chips
-  filterBar: {
-    paddingHorizontal: 16,
-    paddingVertical: 8
-  },
-  filterChip: {
-    backgroundColor: Theme.surface,
-    borderRadius: 25,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: Theme.muted
-  },
-  filterChipSelected: {
-    backgroundColor: Theme.accent,
-    borderColor: Theme.accent
-  },
-  filterChipText: {
-    color: Theme.secondary,
-    fontSize: 14
-  },
-  filterChipTextSelected: {
-    color: Theme.background,
-    fontWeight: '600'
-  },
-
-  // Sort Options
-  sortOptionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingHorizontal: 16,
-    paddingBottom: 8
-  },
-  sortButton: {
-    backgroundColor: Theme.surface,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  sortButtonText: {
-    color: Theme.secondary,
-    fontSize: 14,
-    marginLeft: 4
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)'
-  },
-  sortModalContent: {
-    backgroundColor: Theme.elevated,
-    borderRadius: 16,
-    padding: 20,
-    width: '80%',
-    ...shadowStyle
-  },
-  sortModalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Theme.text,
-    marginBottom: 15,
-    textAlign: 'center'
-  },
-  sortOptionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.surface
-  },
-  sortOptionItemLast: {
-    borderBottomWidth: 0
-  },
-  sortOptionText: {
-    fontSize: 16,
-    color: Theme.secondary
-  },
-  sortOptionTextSelected: {
-    color: Theme.accent,
-    fontWeight: '600'
-  },
-  sortOptionCheck: {
-    fontSize: 18,
-    color: Theme.success
-  },
-
-  // Empty State
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    minHeight: 200
-  },
-  emptyStateIcon: {
-    fontSize: 60,
-    color: Theme.muted,
-    marginBottom: 15
-  },
-  emptyStateMessage: {
-    fontSize: 18,
-    color: Theme.secondary,
-    textAlign: 'center',
-    marginBottom: 20
-  },
-  emptyStateCtaButton: {
-    backgroundColor: Theme.accent,
-    paddingHorizontal: 25,
-    paddingVertical: 10,
-    borderRadius: 10
-  },
-
-  // Toast
-  toastContainer: {
-    position: 'absolute',
-    bottom: 90, // Above tab bar
-    left: '5%',
-    width: '90%',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadowStyle
-  },
-  toastMessage: {
-    color: Theme.text,
-    fontSize: 15,
-    fontWeight: '500',
-    textAlign: 'center'
+  buttonDisabled: {
+    opacity: 0.6
   },
 
   // Note Card
   noteCard: {
-    backgroundColor: Theme.surface,
+    backgroundColor: COLORS.elevated,
     borderRadius: 16,
-    padding: 16,
+    marginHorizontal: 16,
     marginVertical: 8,
-    marginHorizontal: 4,
-    ...shadowStyle,
-    borderColor: Theme.surface,
-    borderWidth: 1
+    flexDirection: 'row',
+    overflow: 'hidden',
+    ...SHADOW_STYLE
   },
-  horizontalNoteCard: {
-    width: width * 0.8,
-    marginRight: 12,
-    backgroundColor: Theme.elevated
+  noteCardColorBar: {
+    width: 8,
+    backgroundColor: COLORS.accent
+  },
+  noteCardContent: {
+    flex: 1,
+    padding: 16
   },
   noteCardHeader: {
     flexDirection: 'row',
@@ -1769,402 +1530,494 @@ const styles = StyleSheet.create({
   },
   noteCardTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: Theme.text,
-    flex: 1,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    flexShrink: 1,
     marginRight: 10
   },
   favoriteButton: {
     padding: 4
   },
   favoriteIcon: {
-    fontSize: 20,
-    color: Theme.danger
+    fontSize: 22,
+    color: COLORS.danger
   },
-  noteCardContent: {
+  noteCardSnippet: {
     fontSize: 14,
-    color: Theme.secondary,
-    marginBottom: 8
+    color: COLORS.secondary,
+    marginBottom: 10,
+    lineHeight: 20
   },
   noteCardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     marginTop: 8
-  },
-  noteCardFolder: {
-    fontSize: 12,
-    color: Theme.muted,
-    fontWeight: '500'
-  },
-  noteCardDate: {
-    fontSize: 12,
-    color: Theme.muted
   },
   noteCardTags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 8
+    flex: 1
   },
-  noteCardTag: {
-    backgroundColor: Theme.background,
-    color: Theme.accent,
-    fontSize: 11,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+  tagBadge: {
+    borderRadius: 25,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     marginRight: 6,
     marginBottom: 6,
+    backgroundColor: COLORS.muted
+  },
+  tagBadgeText: {
+    color: COLORS.text,
+    fontSize: 12
+  },
+  noteCardDate: {
+    fontSize: 12,
+    color: COLORS.muted,
+    marginLeft: 10
+  },
+
+  // Search Bar
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.elevated,
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginVertical: 10,
+    paddingHorizontal: 12,
+    ...SHADOW_STYLE
+  },
+  searchBarInput: {
+    flex: 1,
+    height: 48,
+    color: COLORS.text,
+    fontSize: 16
+  },
+  clearSearchButton: {
+    padding: 8
+  },
+  clearSearchText: {
+    color: COLORS.secondary,
+    fontSize: 18
+  },
+
+  // Filter & Sort
+  filterSortContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    alignItems: 'center'
+  },
+  filterSortLabel: {
+    color: COLORS.secondary,
+    fontSize: 14,
+    marginRight: 8,
+    fontWeight: '500'
+  },
+  filterChip: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 25,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border
+  },
+  filterChipSelected: {
+    backgroundColor: COLORS.accent,
+    borderColor: COLORS.accent
+  },
+  filterChipText: {
+    color: COLORS.secondary,
+    fontSize: 13,
+    fontWeight: '500'
+  },
+  filterChipTextSelected: {
+    color: COLORS.text
+  },
+  sortOption: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 25,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border
+  },
+  sortOptionSelected: {
+    backgroundColor: COLORS.info,
+    borderColor: COLORS.info
+  },
+  sortOptionText: {
+    color: COLORS.secondary,
+    fontSize: 13,
+    fontWeight: '500'
+  },
+  sortOptionTextSelected: {
+    color: COLORS.text
+  },
+
+  // FlatList content
+  flatListContent: {
+    paddingBottom: 100, // Space for tab bar
+    paddingTop: 8
+  },
+
+  // Empty State
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  emptyStateIcon: {
+    fontSize: 60,
+    color: COLORS.muted,
+    marginBottom: 16
+  },
+  emptyStateMessage: {
+    fontSize: 18,
+    color: COLORS.secondary,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 26
+  },
+  emptyStateCtaButton: {
+    width: '70%',
+    alignSelf: 'center'
+  },
+
+  // Toast
+  toastContainer: {
+    position: 'absolute',
+    bottom: 90, // Above tab bar
+    left: 20,
+    right: 20,
+    padding: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    ...SHADOW_STYLE
+  },
+  toastText: {
+    color: COLORS.text,
+    fontSize: 15,
     fontWeight: '500'
   },
 
-  // Folder Card
-  folderCard: {
-    backgroundColor: Theme.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginVertical: 8,
-    marginHorizontal: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    ...shadowStyle
-  },
-  folderIcon: {
-    fontSize: 30,
-    color: Theme.accent,
-    marginRight: 16
-  },
-  folderInfo: {
-    flex: 1
-  },
-  folderName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Theme.text
-  },
-  folderNoteCount: {
-    fontSize: 14,
-    color: Theme.secondary,
-    marginTop: 4
-  },
-
-  // Home Screen specific
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20
-  },
-  statCard: {
-    backgroundColor: Theme.elevated,
-    borderRadius: 16,
-    padding: 20,
-    width: '48%',
-    alignItems: 'center',
-    ...shadowStyle
-  },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: Theme.accent
-  },
-  statLabel: {
-    fontSize: 16,
-    color: Theme.secondary,
-    marginTop: 5
+  // Home Screen
+  homeScrollContainer: {
+    paddingBottom: 100, // Space for tab bar
+    paddingHorizontal: 16,
+    paddingVertical: 10
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: Theme.text,
+    color: COLORS.text,
     marginTop: 20,
-    marginBottom: 15,
-    paddingHorizontal: 16
+    marginBottom: 12
   },
-  horizontalListContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10
   },
-
-  // Note Detail
-  detailScrollContent: {
-    padding: 16,
-    paddingBottom: 80, // For potential buttons at bottom
-  },
-  detailCard: {
-    backgroundColor: Theme.surface,
+  statCard: {
+    backgroundColor: COLORS.elevated,
     borderRadius: 16,
     padding: 20,
-    ...shadowStyle
+    width: '48%',
+    alignItems: 'center',
+    ...SHADOW_STYLE
   },
-  detailTitle: {
-    fontSize: 24,
+  statNumber: {
+    fontSize: 32,
     fontWeight: 'bold',
-    color: Theme.text,
+    color: COLORS.accent
+  },
+  statLabel: {
+    fontSize: 14,
+    color: COLORS.secondary,
+    marginTop: 4
+  },
+  horizontalListContainer: {
+    paddingVertical: 8,
+    paddingLeft: 0,
+    paddingRight: 10
+  },
+  recentNoteCard: {
+    backgroundColor: COLORS.elevated,
+    borderRadius: 16,
+    width: width * 0.7, // 70% of screen width
+    marginRight: 12,
+    overflow: 'hidden',
+    ...SHADOW_STYLE,
+    paddingBottom: 16
+  },
+  recentNoteColorBar: {
+    height: 6,
+    backgroundColor: COLORS.accent,
+    marginBottom: 12
+  },
+  recentNoteTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 4,
+    paddingHorizontal: 16
+  },
+  recentNoteSnippet: {
+    fontSize: 13,
+    color: COLORS.secondary,
+    lineHeight: 18,
+    marginBottom: 8,
+    paddingHorizontal: 16
+  },
+  recentNoteDate: {
+    fontSize: 11,
+    color: COLORS.muted,
+    paddingHorizontal: 16
+  },
+  chartContainer: {
+    paddingVertical: 10
+  },
+  chartBarWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 10
+  },
+  chartBar: {
+    height: 20,
+    borderRadius: 10,
+    marginRight: 10
+  },
+  chartLabel: {
+    color: COLORS.secondary,
+    fontSize: 14
+  },
+  tagCloudContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8
+  },
+  tagCloudItem: {
+    borderRadius: 25,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    marginBottom: 8,
+    backgroundColor: COLORS.muted
+  },
+  tagCloudText: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '500'
+  },
+
+  // Note Detail Screen
+  detailScrollViewContent: {
+    paddingBottom: 20
+  },
+  detailColorBar: {
+    height: 10,
+    backgroundColor: COLORS.accent,
+    marginBottom: 20
   },
   detailContent: {
     fontSize: 16,
-    color: Theme.secondary,
+    color: COLORS.text,
     lineHeight: 24,
-    marginBottom: 20
+    marginBottom: 20,
+    paddingHorizontal: 16
   },
-  detailSection: {
-    marginTop: 15,
+  detailMetaContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
     borderTopWidth: 1,
-    borderTopColor: Theme.elevated,
-    paddingTop: 15
+    borderTopColor: COLORS.border,
+    paddingTop: 16
   },
-  detailSectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Theme.text,
-    marginBottom: 10
-  },
-  detailMeta: {
-    fontSize: 14,
-    color: Theme.muted,
-    marginBottom: 5
+  detailMetaText: {
+    fontSize: 13,
+    color: COLORS.secondary,
+    marginBottom: 4
   },
   detailTagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    marginBottom: 5
-  },
-  detailTag: {
-    backgroundColor: Theme.background,
-    color: Theme.accent,
-    fontSize: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginRight: 6,
-    marginBottom: 6,
-    fontWeight: '500'
-  },
-  detailActionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 25
-  },
-  detailActionButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    backgroundColor: Theme.elevated,
-    marginHorizontal: 5,
-    flex: 1
-  },
-
-  // Audio Player
-  audioPlayerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Theme.background,
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 10
-  },
-  audioPlayButton: {
-    padding: 8,
-    backgroundColor: Theme.accent,
-    borderRadius: 20,
-    marginRight: 10
-  },
-  audioPlayIcon: {
-    fontSize: 18,
-    color: Theme.background
-  },
-  audioProgressBarBackground: {
-    flex: 1,
-    height: 6,
-    backgroundColor: Theme.muted,
-    borderRadius: 3,
-    marginRight: 10
-  },
-  audioProgressBarFill: {
-    height: '100%',
-    backgroundColor: Theme.success,
-    borderRadius: 3
-  },
-  audioTime: {
-    fontSize: 14,
-    color: Theme.secondary
-  },
-
-  // Forms
-  formScrollContent: {
-    padding: 16,
-    paddingBottom: 80
-  },
-  formGroup: {
+    paddingHorizontal: 16,
     marginBottom: 20
   },
-  formLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Theme.text,
+  detailTagsLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.text,
     marginBottom: 8
   },
-  formInput: {
-    backgroundColor: Theme.surface,
-    color: Theme.text,
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    fontSize: 16,
-    ...shadowStyle
-  },
-  formInputMultiline: {
-    minHeight: 120,
-    paddingTop: 12
-  },
-  folderSelectButton: {
-    backgroundColor: Theme.surface,
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
+  detailTagsList: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    ...shadowStyle
+    flexWrap: 'wrap'
   },
-  folderSelectButtonText: {
-    color: Theme.text,
-    fontSize: 16
-  },
-  folderSelectButtonIcon: {
-    color: Theme.secondary,
-    fontSize: 18
-  },
-  folderModalContent: {
-    backgroundColor: Theme.elevated,
-    borderRadius: 16,
-    padding: 20,
-    width: '80%',
-    maxHeight: height * 0.7,
-    ...shadowStyle
-  },
-  folderModalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Theme.text,
-    marginBottom: 15,
-    textAlign: 'center'
-  },
-  folderOptionItem: {
+  detailActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.surface
-  },
-  folderOptionText: {
-    fontSize: 16,
-    color: Theme.secondary
-  },
-  folderOptionTextSelected: {
-    color: Theme.accent,
-    fontWeight: '600'
-  },
-  folderOptionCheck: {
-    fontSize: 18,
-    color: Theme.success
-  },
-  modalCancelButton: {
-    marginTop: 20,
-    backgroundColor: Theme.muted
-  },
-
-  // Audio Recording
-  audioControls: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    marginTop: 10
-  },
-  recordButton: {
-    backgroundColor: Theme.accent,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10
-  },
-  recordingStatus: {
-    color: Theme.danger,
-    marginTop: 10,
-    fontSize: 14,
-    fontWeight: '500'
-  },
-  audioPlaybackContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-    width: '100%'
-  },
-
-  // Add/Edit Folder Modal
-  addEditFolderModalContent: {
-    backgroundColor: Theme.elevated,
-    borderRadius: 16,
-    padding: 20,
-    width: '80%',
-    ...shadowStyle
-  },
-  addEditFolderModalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Theme.text,
-    marginBottom: 15,
-    textAlign: 'center'
-  },
-  modalButtonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+    paddingHorizontal: 16,
     marginTop: 20
   },
-  modalButton: {
+  detailActionButton: {
     flex: 1,
     marginHorizontal: 5
   },
 
-  // Settings
-  settingsSection: {
-    backgroundColor: Theme.surface,
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  modalContent: {
+    backgroundColor: COLORS.elevated,
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-    ...shadowStyle
+    padding: 24,
+    width: '85%',
+    ...SHADOW_STYLE
   },
-  settingsSectionTitle: {
-    fontSize: 18,
+  modalTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: Theme.text,
-    marginBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.elevated,
-    paddingBottom: 10
+    color: COLORS.text,
+    marginBottom: 12,
+    textAlign: 'center'
   },
-  settingItem: {
+  modalMessage: {
+    fontSize: 16,
+    color: COLORS.secondary,
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 24
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  },
+
+  // Note Form Screen
+  formScrollViewContent: {
+    padding: 16,
+    paddingBottom: 20
+  },
+  formLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 8,
+    marginTop: 16
+  },
+  formInput: {
+    backgroundColor: COLORS.surface,
+    color: COLORS.text,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border
+  },
+  formContentInput: {
+    minHeight: 120
+  },
+  inputError: {
+    borderColor: COLORS.danger,
+    borderWidth: 2
+  },
+  errorText: {
+    color: COLORS.danger,
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 8
+  },
+  colorPickerContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    marginTop: 8
+  },
+  colorOption: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    margin: 4,
+    ...SHADOW_STYLE
+  },
+  colorOptionSelected: {
+    borderColor: COLORS.accent
+  },
+  tagSelectorContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+    marginBottom: 16
+  },
+  formSubmitButton: {
+    marginTop: 24
+  },
+
+  // Profile Screen
+  profileScrollViewContent: {
+    padding: 16,
+    paddingBottom: 20
+  },
+  profileSection: {
+    backgroundColor: COLORS.elevated,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    ...SHADOW_STYLE
+  },
+  profileItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.elevated
+    marginBottom: 10
   },
-  settingItemLast: {
-    borderBottomWidth: 0
+  profileLabel: {
+    fontSize: 15,
+    color: COLORS.secondary,
+    fontWeight: '500'
+  },
+  profileValue: {
+    fontSize: 15,
+    color: COLORS.text
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12
   },
   settingLabel: {
     fontSize: 16,
-    color: Theme.text
+    color: COLORS.text,
+    fontWeight: '500'
   },
-  settingValue: {
-    fontSize: 16,
-    color: Theme.secondary
+  settingDescription: {
+    fontSize: 13,
+    color: COLORS.muted,
+    marginTop: 4,
+    marginBottom: 16,
+    lineHeight: 18
   },
-  clearDataButton: {
-    backgroundColor: Theme.danger,
-    marginTop: 10
+  profileActionButton: {
+    marginTop: 10,
+    marginBottom: 10,
+    backgroundColor: COLORS.info
   }
 });
+
+export default App;
